@@ -1,99 +1,199 @@
 function ReportDetail({ report, onBack }) {
     if (!report) return null;
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Pendiente': return 'badge-warning';
-            case 'En Proceso': return 'badge-info';
-            case 'Resuelto': return 'badge-success';
-            default: return 'badge-ghost';
-        }
-    };
-
     return (
-        <div className="h-full overflow-y-auto bg-base-100 p-6">
-            <div className="max-w-4xl mx-auto">
-                <button
-                    onClick={onBack}
-                    className="btn btn-ghost gap-2 mb-6"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-                    </svg>
-                    Volver
-                </button>
+        <div className="h-full flex flex-col bg-earth-dark font-display text-slate-100 overflow-hidden">
+            {/* Header / Nav */}
+            <nav className="sticky top-0 z-50 bg-earth-dark/90 backdrop-blur-md border-b border-primary-accent/20 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={onBack}
+                        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors cursor-pointer group"
+                    >
+                        <span className="material-icons text-xl group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                        <span className="font-semibold text-sm">Volver al Historial</span>
+                    </button>
+                    <div className="h-6 w-px bg-slate-800 mx-2"></div>
+                    <span className="text-xs uppercase tracking-widest font-bold text-slate-500">Reporte #{report.id}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all border border-white/10">
+                        <span className="material-icons text-lg">share</span>
+                        Compartir
+                    </button>
+                    <button className="bg-primary-forest hover:bg-primary-accent text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-black/40 transition-all">
+                        <span className="material-icons text-lg">edit</span>
+                        Editar Reporte
+                    </button>
+                </div>
+            </nav>
 
-                <div className="card bg-base-200 border border-base-300">
-                    <div className="card-body">
-                        <div className="flex justify-between items-start mb-6">
-                            <div>
-                                <h2 className="text-3xl font-bold text-primary mb-2">{report.title}</h2>
-                                <div className="flex gap-3">
-                                    <span className={`badge ${getStatusColor(report.status)}`}>
-                                        {report.status}
-                                    </span>
-                                    <span className="badge badge-outline">{report.category}</span>
+            <main className="flex-grow flex flex-col lg:flex-row h-[calc(100vh-73px)] overflow-hidden">
+                {/* Evidence Section (Left) */}
+                <section className="w-full lg:w-3/5 h-1/2 lg:h-full bg-black/20 overflow-y-auto custom-scrollbar p-6">
+                    <div className="max-w-4xl mx-auto space-y-6">
+                        <div className="relative group">
+                            <img
+                                alt={report.title}
+                                className="w-full h-[500px] object-cover rounded-xl shadow-2xl border border-white/5"
+                                src={report.foto_url || "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=1200"}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 transition-opacity rounded-xl flex items-end p-6">
+                                <div>
+                                    <span className="bg-urgent-red text-[10px] font-black uppercase px-2 py-1 rounded mb-2 inline-block tracking-tighter shadow-lg">Evidencia Crítica</span>
+                                    <p className="text-white text-sm font-medium">Foto de observación principal - {report.title}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="divider"></div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="font-semibold text-lg mb-3 text-primary">Información General</h3>
-                                <div className="space-y-3">
-                                    <div>
-                                        <p className="text-sm text-base-content/70">Ubicación</p>
-                                        <p className="font-medium flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                                            </svg>
-                                            {report.location}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-base-content/70">Fecha</p>
-                                        <p className="font-medium flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                                            </svg>
-                                            {report.date}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-base-content/70">Prioridad</p>
-                                        <p className={`font-bold ${report.priority === 'Alta' ? 'text-error' :
-                                                report.priority === 'Media' ? 'text-warning' : 'text-info'
-                                            }`}>
-                                            {report.priority}
-                                        </p>
-                                    </div>
-                                </div>
+                        {/* Additional Evidence Grids (Placeholders) */}
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="relative group overflow-hidden rounded-xl border border-white/5 bg-earth-card aspect-video flex items-center justify-center">
+                                <span className="text-slate-500 text-xs font-mono">EV-DET-01</span>
+                                <div className="absolute inset-0 bg-black/40 hover:bg-transparent transition-colors"></div>
                             </div>
-
-                            <div>
-                                <h3 className="font-semibold text-lg mb-3 text-primary">Descripción</h3>
-                                <p className="text-base-content/90 leading-relaxed">
-                                    {report.description || 'Este reporte documenta una observación importante en la reserva natural. Se requiere seguimiento y acción según la prioridad asignada.'}
-                                </p>
+                            <div className="relative group overflow-hidden rounded-xl border border-white/5 bg-earth-card aspect-video flex items-center justify-center">
+                                <span className="text-slate-500 text-xs font-mono">EV-DET-02</span>
+                                <div className="absolute inset-0 bg-black/40 hover:bg-transparent transition-colors"></div>
                             </div>
                         </div>
 
-                        <div className="divider"></div>
-
-                        <div className="flex gap-3 justify-end">
-                            <button className="btn btn-outline">
-                                Editar
-                            </button>
-                            <button className="btn btn-primary">
-                                Actualizar Estado
-                            </button>
+                        <div className="bg-white/5 p-8 rounded-xl border-2 border-dashed border-primary-accent/20 flex flex-col items-center justify-center text-slate-500 hover:border-primary-accent/50 hover:text-slate-300 transition-all cursor-pointer group">
+                            <span className="material-icons text-4xl mb-2 group-hover:scale-110 transition-transform">add_a_photo</span>
+                            <p className="text-sm font-medium">Agregar más evidencia de impacto</p>
                         </div>
                     </div>
-                </div>
-            </div>
+                </section>
+
+                {/* Info Section (Right) */}
+                <section className="w-full lg:w-2/5 h-1/2 lg:h-full overflow-y-auto bg-earth-dark border-l border-white/5 p-8 custom-scrollbar">
+                    <div className="max-w-xl mx-auto">
+                        <div className="mb-8">
+                            <div className="flex items-center gap-3 mb-4">
+                                <span className="bg-primary-forest/40 text-green-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-primary-accent/30">
+                                    {report.status}
+                                </span>
+                                {report.priority === 'Alta' && (
+                                    <span className="bg-urgent-red text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse shadow-lg shadow-urgent-red/20">
+                                        Alta Prioridad
+                                    </span>
+                                )}
+                            </div>
+                            <h1 className="text-3xl font-extrabold text-white leading-tight">{report.title}</h1>
+                            <p className="text-slate-400 mt-2 flex items-center gap-1">
+                                <span className="material-icons text-sm text-urgent-red">location_on</span>
+                                {report.location}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-10">
+                            <div className="p-4 rounded-xl bg-earth-card border border-white/5 shadow-inner">
+                                <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                    <span className="material-icons text-lg text-primary-accent">category</span>
+                                    <span className="text-xs font-bold uppercase">Categoría</span>
+                                </div>
+                                <p className="font-bold text-slate-200">{report.category}</p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-earth-card border border-white/5 shadow-inner">
+                                <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                    <span className="material-icons text-lg text-primary-accent">person</span>
+                                    <span className="text-xs font-bold uppercase">Reportado por</span>
+                                </div>
+                                <p className="font-bold text-slate-200">{report.reporter}</p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-earth-card border border-white/5 shadow-inner">
+                                <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                    <span className="material-icons text-lg text-primary-accent">event</span>
+                                    <span className="text-xs font-bold uppercase">Fecha</span>
+                                </div>
+                                <p className="font-bold text-slate-200">{report.submitted}</p>
+                            </div>
+                            <div className="p-4 rounded-xl bg-earth-card border border-white/5 shadow-inner">
+                                <div className="flex items-center gap-2 text-slate-500 mb-1">
+                                    <span className="material-icons text-lg text-primary-accent">schedule</span>
+                                    <span className="text-xs font-bold uppercase">Hora</span>
+                                </div>
+                                <p className="font-bold text-slate-200">{report.time}</p>
+                            </div>
+                        </div>
+
+                        <div className="mb-10 bg-earth-card/50 p-6 rounded-xl border border-white/5">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 border-l-2 border-urgent-red pl-3">Descripción del Reporte</h3>
+                            <div className="text-slate-300 leading-relaxed text-sm">
+                                {report.description}
+                            </div>
+                        </div>
+
+                        <div className="mb-10">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Ubicación Precisa</h3>
+                            <div className="relative w-full h-48 rounded-xl overflow-hidden border border-white/10 bg-slate-900 group shadow-2xl">
+                                <div className="absolute inset-0 bg-[url('https://api.maptiler.com/maps/hybrid/static/-64.442,31.675,12/400x200.png?key=wxRpMoRkMeIY1OWMwquv')] bg-cover bg-center opacity-60 grayscale hover:grayscale-0 transition-all duration-700"></div>
+                                <div className="absolute inset-0 bg-primary-forest/20"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="relative">
+                                        <span className="material-icons text-urgent-red text-5xl drop-shadow-[0_0_15px_rgba(217,4,41,0.6)] animate-bounce">place</span>
+                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/40 rounded-full blur-sm"></div>
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-3 right-3 flex gap-2">
+                                    <button className="bg-earth-dark/90 text-white p-2 rounded-lg shadow-md hover:bg-primary-accent transition-colors border border-white/10">
+                                        <span className="material-icons text-sm">zoom_in</span>
+                                    </button>
+                                    <button className="bg-earth-dark/90 text-white p-2 rounded-lg shadow-md hover:bg-primary-accent transition-colors border border-white/10">
+                                        <span className="material-icons text-sm">fullscreen</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="mt-3 flex justify-between text-xs font-mono text-slate-500">
+                                <span>{report.coordinates}</span>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-white/5 pt-8 mb-10">
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">Historial de Flujo de Trabajo</h3>
+                            <div className="space-y-6">
+                                <div className="flex gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-urgent-red/20 text-urgent-red flex items-center justify-center">
+                                        <span className="material-icons text-sm">priority_high</span>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-sm font-bold text-white">Chief Ranger Mark</span>
+                                            <span className="text-[10px] text-slate-500">hace 2 horas</span>
+                                        </div>
+                                        <p className="text-xs text-slate-300 bg-earth-card p-3 rounded-lg rounded-tl-none border border-white/5 shadow-sm leading-relaxed">
+                                            He notificado al equipo de mantenimiento para instalar barreras temporales. Necesitamos reforestar esta área antes de la temporada de lluvias.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-white/5 text-slate-400 flex items-center justify-center border border-white/5">
+                                        <span className="material-icons text-sm">history</span>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-sm font-bold text-slate-400">Sistema</span>
+                                            <span className="text-[10px] text-slate-500">{report.submitted}</span>
+                                        </div>
+                                        <p className="text-xs italic text-slate-500">
+                                            Estado del reporte cambiado de <span className="font-bold">Nuevo</span> a <span className="text-primary-accent font-bold">En Revisión</span>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-8">
+                                <label className="block text-xs font-bold uppercase text-slate-500 mb-3">Agregar Nota Interna</label>
+                                <div className="relative">
+                                    <textarea className="w-full bg-earth-card/50 border border-white/10 rounded-xl p-4 text-sm text-white focus:ring-2 ring-urgent-red/50 focus:border-transparent outline-none min-h-[100px] shadow-inner" placeholder="Agregar una actualización de acción urgente..."></textarea>
+                                    <button className="absolute bottom-3 right-3 bg-urgent-red text-white px-4 py-1.5 rounded-lg text-xs font-black uppercase hover:bg-urgent-red/80 transition-all shadow-lg shadow-urgent-red/20">
+                                        Publicar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
         </div>
     );
 }

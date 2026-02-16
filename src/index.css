@@ -6,6 +6,11 @@
 @theme {
   --font-sans: "Manrope", sans-serif;
   --color-primary: #13ec5b;
+  --color-primary-forest: #1B4332;
+  --color-primary-accent: #2D6A4F;
+  --color-urgent-red: #D90429;
+  --color-earth-dark: #081C15;
+  --color-earth-card: #162B21;
   --color-base-100: #102216;
   --color-base-200: #162a1d;
   --color-base-300: #1f3a28;
@@ -17,8 +22,32 @@
 }
 
 html,
-body {
-  background-color: #102216;
+body,
+#root {
+  background-color: #081C15;
   color: #ffffff;
   font-family: "Manrope", sans-serif;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(45, 106, 79, 0.5);
+  border-radius: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 106, 79, 0.8);
 }

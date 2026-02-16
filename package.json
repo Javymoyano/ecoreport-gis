@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:backend": "cd backend && uvicorn main:app --reload --port 8000",
+    "dev:backend": "cd backend && ..\\.venv\\Scripts\\uvicorn.exe main:app --reload --port 8000",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",

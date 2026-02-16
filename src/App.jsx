@@ -119,12 +119,12 @@ function App() {
             <div className="flex items-center gap-3">
               <div className="avatar placeholder">
                 <div className="bg-[#13ec5b]/20 text-[#13ec5b] rounded-full w-10 font-semibold flex items-center justify-center">
-                  <span className="text-sm">MT</span>
+                  <span className="text-sm">JM</span>
                 </div>
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-sm text-white">Marcus Thorne</p>
-                <p className="text-xs text-gray-400">Senior Ranger</p>
+                <p className="font-semibold text-sm text-white">Javy Moyano</p>
+                <p className="text-xs text-gray-400">Administrador</p>
               </div>
             </div>
           </div>

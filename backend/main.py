@@ -21,8 +21,8 @@ def read_root():
 
 @app.get("/reportes")
 def get_reportes():
-    # Join with categorias table to get the name
-    response = supabase.table("reportes").select("*, categorias(nombre)").execute()
+    # Join with categorias and perfiles tables
+    response = supabase.table("reportes").select("*, categorias(nombre), perfiles(nombre_completo)").execute()
     return response.data
 
 @app.post("/reportes")
