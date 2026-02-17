@@ -10,28 +10,42 @@ function App() {
   const [currentView, setCurrentView] = useState('map');
   const [selectedReport, setSelectedReport] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [pendingReportCoords, setPendingReportCoords] = useState(null);
+  const [mapTarget, setMapTarget] = useState(null);
 
   const handleSelectReport = (report) => {
     setSelectedReport(report);
     setCurrentView('reportDetail');
   };
 
+  const handleStartReportFromMap = (lat, lng) => {
+    setPendingReportCoords({ lat, lng });
+    // We don't necessarily need to change the view if we want it as an overlay
+  };
+
+  const handleCancelNewReport = () => {
+    setPendingReportCoords(null);
+  };
+
+  const handleSubmitSuccess = (nextView = 'reports') => {
+    setPendingReportCoords(null);
+    setCurrentView(nextView);
+    // Para recargar el mapa si volvemos a él, podríamos disparar un evento global o usar un key
+  };
+
   const handleNewReport = () => {
-    setCurrentView('newReport');
-  };
-
-  const handleSubmitReport = (reportData) => {
-    console.log('Nuevo reporte:', reportData);
-    setCurrentView('reports');
-  };
-
-  const handleCancelForm = () => {
-    setCurrentView('reports');
+    // If coming from the sidebar button, we default to center of map or something
+    setPendingReportCoords({ lat: -31.675, lng: -64.442 });
   };
 
   const handleBackToList = () => {
     setSelectedReport(null);
     setCurrentView('reports');
+  };
+
+  const handleViewOnMap = (coords) => {
+    setMapTarget(coords); // [lng, lat]
+    setCurrentView('map');
   };
 
   const navItems = [
@@ -142,20 +156,32 @@ function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
-        {currentView === 'map' && <GisMap />}
+      <main className="flex-1 overflow-hidden relative">
+        {currentView === 'map' && (
+          <GisMap
+            onStartReport={handleStartReportFromMap}
+            targetCoords={mapTarget}
+            onClearTarget={() => setMapTarget(null)}
+          />
+        )}
         {currentView === 'reports' && (
           <ReportsList
             onSelectReport={handleSelectReport}
             onNewReport={handleNewReport}
+            onViewOnMap={handleViewOnMap}
           />
         )}
-        {currentView === 'newReport' && (
+
+        {/* New Report Overlay (Premium Design) */}
+        {pendingReportCoords && (
           <NewReportForm
-            onCancel={handleCancelForm}
-            onSubmit={handleSubmitReport}
+            lat={pendingReportCoords.lat}
+            lng={pendingReportCoords.lng}
+            onCancel={handleCancelNewReport}
+            onSubmitSuccess={handleSubmitSuccess}
           />
         )}
+
         {currentView === 'reportDetail' && (
           <ReportDetail
             report={selectedReport}

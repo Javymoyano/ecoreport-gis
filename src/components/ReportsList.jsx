@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-function ReportsList({ onSelectReport, onNewReport }) {
+function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     const [reports, setReports] = useState([]);
     const [selectedReportId, setSelectedReportId] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -13,7 +13,8 @@ function ReportsList({ onSelectReport, onNewReport }) {
     const fetchReports = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:8000/reportes');
+            const apiBase = `http://${window.location.hostname}:8001`;
+            const response = await fetch(`${apiBase}/reportes`);
             if (!response.ok) throw new Error('Failed to fetch reports');
             const data = await response.json();
 
@@ -52,9 +53,10 @@ function ReportsList({ onSelectReport, onNewReport }) {
                     status: status.label,
                     statusDot: status.dot,
                     statusText: status.text,
-                    location: report.notas?.split('.')[0] || 'Unknown Location', // Placeholder for location name
-                    coordinates: '◎ Lat: ' + report.geom?.coordinates?.[1].toFixed(4) + ' / Lon: ' + report.geom?.coordinates?.[0].toFixed(4) || 'No coords',
-                    description: report.notas,
+                    observations: report.notas || 'Sin descripción',
+                    foto_url: report.foto_url,
+                    coordinates: report.geom?.coordinates, // [lng, lat]
+                    locationName: `${report.geom?.coordinates?.[1].toFixed(4)}, ${report.geom?.coordinates?.[0].toFixed(4)}`,
                     reporter: report.perfiles?.nombre_completo || 'Javier Moyano',
                     date: dateObj.toLocaleDateString('en-US'),
                     priority: report.titulo?.toLowerCase().includes('fuego') || report.estado === 'flagged' ? 'Alta' : 'Media',
@@ -221,101 +223,112 @@ function ReportsList({ onSelectReport, onNewReport }) {
                             <p className="text-sm">El historial de la base de datos está vacío.</p>
                         </div>
                     ) : (
-                        <div className="bg-[#162a1d] border border-[#1f3a28] rounded-xl overflow-hidden shadow-2xl flex flex-col">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-[#1f3a28] bg-white/5">
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">ID del reporte</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de envío</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoría</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Ubicación</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[#1f3a28]">
-                                    {paginatedReports.map((report) => (
-                                        <tr
-                                            key={report.fullId}
-                                            onClick={() => setSelectedReportId(report.id)}
-                                            className={`hover:bg-white/5 transition-colors group cursor-pointer ${selectedReportId === report.id ? 'bg-[#13ec5b]/5' : ''}`}
-                                        >
-                                            <td className="px-6 py-4 font-mono text-sm text-[#13ec5b] font-medium">#{report.id}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm font-medium text-white">{report.submitted}</div>
-                                                <div className="text-xs text-slate-500">{report.time}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${report.categoryColor}`}>
-                                                    {report.category}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`w-2 h-2 rounded-full ${report.statusDot}`}></span>
-                                                    <span className={`text-sm ${report.statusText}`}>{report.status}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-2 text-sm text-white">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-400">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                                                    </svg>
-                                                    {report.location}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400" title="View on Map">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
-                                                        </svg>
-                                                    </button>
-                                                    <button className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400" title="Edit Details">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
+                        <div className="bg-[#162a1d] border border-[#1f3a28] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full text-left border-collapse min-w-[800px]">
+                                    <thead>
+                                        <tr className="border-b border-[#1f3a28] bg-white/5">
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">ID del reporte</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de envío</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoría</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Observaciones</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-
-                            {/* Pagination Controls */}
-                            {totalPages > 1 && (
-                                <div className="px-6 py-4 bg-white/5 border-t border-[#1f3a28] flex items-center justify-between">
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                            disabled={currentPage === 1}
-                                            className="px-3 py-1 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
-                                        >
-                                            Anterior
-                                        </button>
-                                        <button
-                                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                            disabled={currentPage === totalPages}
-                                            className="px-3 py-1 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
-                                        >
-                                            Siguiente
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                            <button
-                                                key={page}
-                                                onClick={() => setCurrentPage(page)}
-                                                className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold transition-all ${currentPage === page ? 'bg-[#13ec5b] text-[#102216]' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                                    </thead>
+                                    <tbody className="divide-y divide-[#1f3a28]">
+                                        {paginatedReports.map((report) => (
+                                            <tr
+                                                key={report.fullId}
+                                                onClick={() => {
+                                                    setSelectedReportId(report.id);
+                                                    // Opcional: onSelectReport(report); // Si queremos que al click abra directo
+                                                }}
+                                                onDoubleClick={() => onSelectReport(report)}
+                                                className={`hover:bg-white/5 transition-colors group cursor-pointer ${selectedReportId === report.id ? 'bg-[#13ec5b]/5' : ''}`}
                                             >
-                                                {page}
-                                            </button>
+                                                <td className="px-6 py-4 font-mono text-sm text-[#13ec5b] font-medium">#{report.id}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-medium text-white">{report.submitted}</div>
+                                                    <div className="text-xs text-slate-500">{report.time}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${report.categoryColor}`}>
+                                                        {report.category}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`w-2 h-2 rounded-full ${report.statusDot}`}></span>
+                                                        <span className={`text-sm ${report.statusText}`}>{report.status}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm text-slate-300 max-w-[400px] whitespace-normal break-words leading-relaxed" title={report.observations}>
+                                                        {report.observations}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onViewOnMap(report.coordinates); }}
+                                                            className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400"
+                                                            title="View on Map"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); onSelectReport(report); }}
+                                                            className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400"
+                                                            title="View Details"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                         ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Pagination Controls */}
+                                {totalPages > 1 && (
+                                    <div className="px-6 py-4 bg-white/5 border-t border-[#1f3a28] flex items-center justify-between">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                disabled={currentPage === 1}
+                                                className="px-3 py-1 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
+                                            >
+                                                Anterior
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                disabled={currentPage === totalPages}
+                                                className="px-3 py-1 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
+                                            >
+                                                Siguiente
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                <button
+                                                    key={page}
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold transition-all ${currentPage === page ? 'bg-[#13ec5b] text-[#102216]' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -409,7 +422,7 @@ function ReportsList({ onSelectReport, onNewReport }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 

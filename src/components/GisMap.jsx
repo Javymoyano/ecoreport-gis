@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import LayerControl from './LayerControl';
 
-function GisMap() {
+function GisMap({ onStartReport, targetCoords, onClearTarget }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef([]);
@@ -14,14 +14,16 @@ function GisMap() {
   // 1. EXPLICACIÓN: Función para pedir datos al servidor (Backend)
   // Usamos 'fetch' para llamar a nuestra API en el puerto 8000.
   const fetchReports = async () => {
+    const apiBase = `http://${window.location.hostname}:8001`;
     try {
-      const response = await fetch('http://localhost:8000/reportes');
+      const response = await fetch(`${apiBase}/reportes`);
       const data = await response.json();
       setReports(data);
     } catch (error) {
       console.error('Error al cargar reportes:', error);
     }
   };
+
 
   useEffect(() => {
     fetchReports();
@@ -48,7 +50,54 @@ function GisMap() {
         });
       });
 
+      // 4. EXPLICACIÓN: Manejo de Click Derecho para Nuevo Reporte (Diseño Premium)
+      map.current.on('contextmenu', (e) => {
+        const { lng, lat } = e.lngLat;
+
+        // Crear contenedor para el popup con estilo Stitch
+        const popupNode = document.createElement('div');
+        popupNode.className = 'p-0 overflow-hidden rounded-xl bg-[#102216] border border-[#13ec5b]/30 shadow-[0_0_20px_rgba(19,236,91,0.2)] text-white min-w-[200px] animate-in fade-in zoom-in duration-200';
+
+        popupNode.innerHTML = `
+          <div class="px-4 py-3 border-b border-[#13ec5b]/10 bg-white/5">
+            <p class="text-[10px] uppercase tracking-[0.2em] text-[#13ec5b] font-bold mb-1 opacity-80">Nuevo Reporte</p>
+            <p class="text-sm font-semibold text-white/90">¿Iniciar reporte aquí?</p>
+          </div>
+          <div class="px-4 py-2 bg-[#081C15]/50 flex items-center gap-1 text-[10px] text-white/40 font-mono italic border-b border-[#13ec5b]/5">
+            <span class="material-icons text-[12px]">location_on</span>
+            ${lat.toFixed(4)}, ${lng.toFixed(4)}
+          </div>
+          <div class="p-3 flex gap-2 bg-[#102216]">
+            <button id="btn-cancel-report" class="flex-1 px-3 py-2 text-[11px] font-bold uppercase tracking-wider bg-white/5 hover:bg-white/10 text-white/60 rounded-lg transition-all border border-white/5">Cancelar</button>
+            <button id="btn-start-report" class="flex-1 px-3 py-2 text-[11px] font-bold uppercase tracking-wider bg-[#13ec5b] hover:bg-[#13ec5b]/80 text-[#081C15] rounded-lg transition-all shadow-[0_4px_12px_rgba(19,236,91,0.3)]">Confirmar</button>
+          </div>
+        `;
+
+        const popup = new maplibregl.Popup({
+          closeButton: false,
+          className: 'stitch-popup',
+          maxWidth: '300px',
+          anchor: 'bottom',
+          offset: [0, -10]
+        })
+          .setLngLat([lng, lat])
+          .setDOMContent(popupNode)
+          .addTo(map.current);
+
+        // Event listeners
+        popupNode.querySelector('#btn-start-report').onclick = () => {
+          popup.remove();
+          if (onStartReport) onStartReport(lat, lng);
+        };
+
+        popupNode.querySelector('#btn-cancel-report').onclick = () => {
+          popup.remove();
+        };
+      });
+
+
       map.current.on('load', () => {
+
         map.current.resize();
       });
     }, 100);
@@ -58,6 +107,24 @@ function GisMap() {
       if (map.current) map.current.remove();
     };
   }, []);
+
+  // 5. EXPLICACIÓN: Volar a coordenadas específicas si vienen de la lista
+  useEffect(() => {
+    if (map.current && targetCoords) {
+      console.log("DEBUG: Flying to target coordinates:", targetCoords);
+      map.current.flyTo({
+        center: targetCoords, // [lng, lat]
+        zoom: 14,
+        essential: true,
+        speed: 1.5
+      });
+
+      // Limpiamos el target para que no se repita el vuelo si cambiamos de vista y volvemos
+      if (onClearTarget) {
+        setTimeout(onClearTarget, 2000);
+      }
+    }
+  }, [targetCoords]);
 
   // 3. EXPLICACIÓN: Dibujar Marcadores Reales
   // Cada vez que la lista 'reports' cambia, borramos los viejos y dibujamos los nuevos.

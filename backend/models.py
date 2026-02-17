@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from uuid import UUID
 
-class Reportcreate(BaseModel):
+class ReportCreate(BaseModel):
     titulo: str
     categoria_id: UUID
     notas: Optional[str] = None

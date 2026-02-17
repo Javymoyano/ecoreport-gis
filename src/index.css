@@ -3,6 +3,22 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+@keyframes fade-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-left {
+  animation: fade-in-left 0.3s ease-out forwards;
+}
+
 @theme {
   --font-sans: "Manrope", sans-serif;
   --color-primary: #13ec5b;
@@ -50,4 +66,15 @@ body,
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(45, 106, 79, 0.8);
+}
+/* MapLibre Popup Styling */
+.stitch-popup .maplibregl-popup-content {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.stitch-popup .maplibregl-popup-tip {
+  border-top-color: #102216 !important;
+  border-bottom-color: #102216 !important;
 }
