@@ -67,6 +67,7 @@ body,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(45, 106, 79, 0.8);
 }
+
 /* MapLibre Popup Styling */
 .stitch-popup .maplibregl-popup-content {
   background: transparent;
@@ -77,4 +78,38 @@ body,
 .stitch-popup .maplibregl-popup-tip {
   border-top-color: #102216 !important;
   border-bottom-color: #102216 !important;
+}
+
+/* Custom Select Styling */
+select {
+  cursor: pointer;
+}
+
+select option {
+  background-color: #102216;
+  color: #ffffff;
+  padding: 12px;
+}
+
+select:focus {
+  border-color: #13ec5b !important;
+  box-shadow: 0 0 0 1px rgba(19, 236, 91, 0.2) !important;
+}
+
+/* Chrome/Safari/Edge custom styling for options if possible */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #081C15;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1B4332;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #13ec5b;
 }

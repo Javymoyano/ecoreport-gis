@@ -1,5 +1,86 @@
+import { useState, useEffect } from 'react';
+import CustomSelect from './CustomSelect';
+
 function ReportDetail({ report, onBack }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [formData, setFormData] = useState({
+        titulo: '',
+        description: '',
+        categoria_id: '',
+        estado: ''
+    });
+    const [categories, setCategories] = useState([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    useEffect(() => {
+        if (report) {
+            setFormData({
+                titulo: report.title || '',
+                description: report.description || '',
+                categoria_id: report.categoryId || '',
+                estado: report.rawStatus || 'pendiente'
+            });
+        }
+    }, [report, isEditing]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const apiBase = `http://${window.location.hostname}:8001`;
+                const response = await fetch(`${apiBase}/categorias`);
+                const data = await response.json();
+                setCategories(data);
+            } catch (error) {
+                console.error('Error fetching categories:', error);
+            }
+        };
+        fetchCategories();
+    }, []);
+
     if (!report) return null;
+
+    const handleEditClick = () => setIsEditing(true);
+    const handleCancel = () => setIsEditing(false);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const apiBase = `http://${window.location.hostname}:8001`;
+            const payload = {
+                titulo: formData.titulo,
+                description: formData.description,
+                estado: formData.estado,
+                categoria_id: formData.categoria_id || null
+            };
+
+            const response = await fetch(`${apiBase}/reportes/${report.fullId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                setIsEditing(false);
+                setShowSuccess(true);
+                // No llamamos a onBack() inmediatamente para permitir ver el éxito
+            } else {
+                alert("Error al actualizar el reporte");
+            }
+        } catch (error) {
+            console.error('Error updating report:', error);
+            alert("Error de conexión");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     return (
         <div className="h-full flex flex-col bg-earth-dark font-display text-slate-100 overflow-hidden">
@@ -17,14 +98,37 @@ function ReportDetail({ report, onBack }) {
                     <span className="text-xs uppercase tracking-widest font-bold text-slate-500">Reporte #{report.id}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all border border-white/10">
-                        <span className="material-icons text-lg">share</span>
-                        Compartir
-                    </button>
-                    <button className="bg-primary-forest hover:bg-primary-accent text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-black/40 transition-all">
-                        <span className="material-icons text-lg">edit</span>
-                        Editar Reporte
-                    </button>
+                    {isEditing ? (
+                        <>
+                            <button
+                                onClick={handleCancel}
+                                className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all border border-white/10"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                className="bg-primary-forest hover:bg-primary-accent text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-black/40 transition-all disabled:opacity-50"
+                            >
+                                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button className="bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all border border-white/10">
+                                <span className="material-icons text-lg">share</span>
+                                Compartir
+                            </button>
+                            <button
+                                onClick={handleEditClick}
+                                className="bg-primary-forest hover:bg-primary-accent text-white px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-black/40 transition-all"
+                            >
+                                <span className="material-icons text-lg">edit</span>
+                                Editar Reporte
+                            </button>
+                        </>
+                    )}
                 </div>
             </nav>
 
@@ -70,16 +174,44 @@ function ReportDetail({ report, onBack }) {
                     <div className="max-w-xl mx-auto">
                         <div className="mb-8">
                             <div className="flex items-center gap-3 mb-4">
-                                <span className="bg-primary-forest/40 text-green-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-primary-accent/30">
-                                    {report.status}
-                                </span>
+                                {isEditing ? (
+                                    <CustomSelect
+                                        name="estado"
+                                        value={formData.estado}
+                                        onChange={handleChange}
+                                        options={[
+                                            { value: 'pendiente', label: 'Pendiente' },
+                                            { value: 'en proceso', label: 'En proceso' },
+                                            { value: 'aprobado', label: 'Aprobado' },
+                                            { value: 'resuelto', label: 'Resuelto' },
+                                            { value: 'rechazado', label: 'Rechazado' }
+                                        ]}
+                                    />
+                                ) : (
+                                    <span className="bg-primary-forest/40 text-green-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-primary-accent/30">
+                                        {report.status}
+                                    </span>
+                                )}
+
                                 {report.priority === 'Alta' && (
                                     <span className="bg-urgent-red text-white px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse shadow-lg shadow-urgent-red/20">
                                         Alta Prioridad
                                     </span>
                                 )}
                             </div>
-                            <h1 className="text-3xl font-extrabold text-white leading-tight">{report.title}</h1>
+
+                            {isEditing ? (
+                                <input
+                                    name="titulo"
+                                    value={formData.titulo}
+                                    onChange={handleChange}
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-3xl font-extrabold text-white leading-tight focus:ring-2 ring-primary-accent/50 outline-none"
+                                    placeholder="Título del reporte"
+                                />
+                            ) : (
+                                <h1 className="text-3xl font-extrabold text-white leading-tight">{report.title}</h1>
+                            )}
+
                             <p className="text-slate-400 mt-2 flex items-center gap-1">
                                 <span className="material-icons text-sm text-urgent-red">location_on</span>
                                 {report.location}
@@ -92,7 +224,17 @@ function ReportDetail({ report, onBack }) {
                                     <span className="material-icons text-lg text-primary-accent">category</span>
                                     <span className="text-xs font-bold uppercase">Categoría</span>
                                 </div>
-                                <p className="font-bold text-slate-200">{report.category}</p>
+                                {isEditing ? (
+                                    <CustomSelect
+                                        name="categoria_id"
+                                        value={formData.categoria_id}
+                                        onChange={handleChange}
+                                        placeholder="Editar categoría"
+                                        options={categories.map(cat => ({ value: cat.id, label: cat.nombre }))}
+                                    />
+                                ) : (
+                                    <p className="font-bold text-slate-200">{report.category}</p>
+                                )}
                             </div>
                             <div className="p-4 rounded-xl bg-earth-card border border-white/5 shadow-inner">
                                 <div className="flex items-center gap-2 text-slate-500 mb-1">
@@ -119,9 +261,19 @@ function ReportDetail({ report, onBack }) {
 
                         <div className="mb-10 bg-earth-card/50 p-6 rounded-xl border border-white/5">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 border-l-2 border-urgent-red pl-3">Descripción del Reporte</h3>
-                            <div className="text-slate-300 leading-relaxed text-sm">
-                                {report.description}
-                            </div>
+                            {isEditing ? (
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-slate-300 focus:ring-2 ring-primary-accent/50 outline-none min-h-[150px]"
+                                    placeholder="Descripción del reporte"
+                                />
+                            ) : (
+                                <div className="text-slate-300 leading-relaxed text-sm">
+                                    {report.description}
+                                </div>
+                            )}
                         </div>
 
                         <div className="mb-10">
@@ -181,19 +333,47 @@ function ReportDetail({ report, onBack }) {
                                     </div>
                                 </div>
                             </div>
-                            <div className="mt-8">
-                                <label className="block text-xs font-bold uppercase text-slate-500 mb-3">Agregar Nota Interna</label>
-                                <div className="relative">
-                                    <textarea className="w-full bg-earth-card/50 border border-white/10 rounded-xl p-4 text-sm text-white focus:ring-2 ring-urgent-red/50 focus:border-transparent outline-none min-h-[100px] shadow-inner" placeholder="Agregar una actualización de acción urgente..."></textarea>
-                                    <button className="absolute bottom-3 right-3 bg-urgent-red text-white px-4 py-1.5 rounded-lg text-xs font-black uppercase hover:bg-urgent-red/80 transition-all shadow-lg shadow-urgent-red/20">
-                                        Publicar
-                                    </button>
+                            {!isEditing && (
+                                <div className="mt-8">
+                                    <label className="block text-xs font-bold uppercase text-slate-500 mb-3">Agregar Nota Interna</label>
+                                    <div className="relative">
+                                        <textarea className="w-full bg-earth-card/50 border border-white/10 rounded-xl p-4 text-sm text-white focus:ring-2 ring-urgent-red/50 focus:border-transparent outline-none min-h-[100px] shadow-inner" placeholder="Agregar una actualización de acción urgente..."></textarea>
+                                        <button className="absolute bottom-3 right-3 bg-urgent-red text-white px-4 py-1.5 rounded-lg text-xs font-black uppercase hover:bg-urgent-red/80 transition-all shadow-lg shadow-urgent-red/20">
+                                            Publicar
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </section>
             </main>
+
+            {/* Success Notification Modal */}
+            {showSuccess && (
+                <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-[#102216] border border-[#13ec5b]/30 w-full max-w-md rounded-2xl shadow-[0_0_50px_rgba(19,236,91,0.15)] overflow-hidden animate-in zoom-in duration-300">
+                        <div className="h-1.5 bg-[#13ec5b] shadow-[0_0_15px_rgba(19,236,91,0.5)]"></div>
+                        <div className="p-8 flex flex-col items-center text-center">
+                            <div className="w-20 h-20 bg-[#13ec5b]/10 rounded-full flex items-center justify-center mb-6 ring-4 ring-[#13ec5b]/5">
+                                <span className="material-icons text-[#13ec5b] text-5xl">task_alt</span>
+                            </div>
+                            <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-tight">Cambios guardados</h2>
+                            <p className="text-slate-400 text-sm mb-8 leading-relaxed">
+                                El reporte se ha actualizado correctamente en el servidor central de la reserva.
+                            </p>
+
+                            <button
+                                onClick={onBack}
+                                className="w-full bg-[#13ec5b] hover:bg-[#13ec5b]/90 text-[#081C15] font-black py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-[#13ec5b]/20 active:scale-95"
+                            >
+                                <span className="material-icons text-sm uppercase">arrow_back</span>
+                                <span className="text-xs uppercase tracking-widest">Regresar al historial</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

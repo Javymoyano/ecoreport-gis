@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CustomSelect from './CustomSelect';
 import SuccessModal from './SuccessModal';
 
 function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
@@ -7,7 +8,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
     const [formData, setFormData] = useState({
         titulo: '',
         categoria_id: '',
-        notas: '',
+        description: '',
         foto_url: '',
         estado: 'pendiente'
     });
@@ -58,7 +59,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
         const reportData = {
             titulo: formData.titulo,
             categoria_id: formData.categoria_id,
-            notas: formData.notas,
+            description: formData.description,
             estado: formData.estado,
             geom: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
             usuario_id: USER_ID,
@@ -154,40 +155,28 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Categoría</label>
-                            <div className="relative">
-                                <select
-                                    name="categoria_id"
-                                    value={formData.categoria_id}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full appearance-none bg-slate-50 dark:bg-[#102216]/50 border border-slate-200 dark:border-[#13ec5b]/20 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13ec5b]/50 focus:border-[#13ec5b] outline-none transition-all pr-10 text-white"
-                                >
-                                    <option value="">Selecciona una categoría</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                                    ))}
-                                </select>
-                                <span className="material-icons absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl">expand_more</span>
-                            </div>
+                            <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[10px]">Categoría</label>
+                            <CustomSelect
+                                name="categoria_id"
+                                value={formData.categoria_id}
+                                onChange={handleChange}
+                                placeholder="Selecciona una categoría"
+                                options={categories.map(cat => ({ value: cat.id, label: cat.nombre }))}
+                            />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Estado Inicial</label>
-                            <div className="relative">
-                                <select
-                                    name="estado"
-                                    value={formData.estado}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full appearance-none bg-slate-50 dark:bg-[#102216]/50 border border-slate-200 dark:border-[#13ec5b]/20 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13ec5b]/50 focus:border-[#13ec5b] outline-none transition-all pr-10 text-white"
-                                >
-                                    <option value="pendiente">Pendiente</option>
-                                    <option value="en proceso">En Proceso</option>
-                                    <option value="resuelto">Resuelto</option>
-                                    <option value="aprobado">Aprobado</option>
-                                </select>
-                                <span className="material-icons absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xl">flag</span>
-                            </div>
+                            <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[10px]">Estado Inicial</label>
+                            <CustomSelect
+                                name="estado"
+                                value={formData.estado}
+                                onChange={handleChange}
+                                options={[
+                                    { value: 'pendiente', label: 'Pendiente' },
+                                    { value: 'en proceso', label: 'En proceso' },
+                                    { value: 'aprobado', label: 'Aprobado' },
+                                    { value: 'resuelto', label: 'Resuelto' }
+                                ]}
+                            />
                         </div>
                     </div>
                 </section>
@@ -202,14 +191,14 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
                         <div>
                             <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Descripción</label>
                             <textarea
-                                name="notas"
-                                value={formData.notas}
+                                name="description"
+                                value={formData.description}
                                 onChange={handleChange}
                                 className="w-full bg-slate-50 dark:bg-[#102216]/50 border border-slate-200 dark:border-[#13ec5b]/20 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13ec5b]/50 focus:border-[#13ec5b] outline-none transition-all resize-none placeholder:text-slate-500 text-white"
                                 placeholder="Describe el incidente o avistamiento en detalle..."
                                 rows="4"
                             ></textarea>
-                            <p className="text-[10px] text-right text-slate-500 mt-1">{formData.notas.length} / 500 caracteres</p>
+                            <p className="text-[10px] text-right text-slate-500 mt-1">{formData.description.length} / 500 caracteres</p>
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">URL de Imagen (Opcional)</label>

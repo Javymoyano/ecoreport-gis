@@ -100,8 +100,8 @@ function App() {
             </div>
             {sidebarOpen && (
               <div>
-                <h1 className="font-bold text-lg text-white">Nature Reserve</h1>
-                <p className="text-xs text-gray-400 uppercase tracking-wide">Management System</p>
+                <h1 className="font-bold text-lg text-white text-gradient bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Reserva Natural</h1>
+                <p className="text-[#13ec5b] text-[10px] uppercase font-black tracking-[0.2em] opacity-80">Sistema de Gestión</p>
               </div>
             )}
           </div>
@@ -191,24 +191,24 @@ function App() {
         {currentView === 'dashboard' && (
           <div className="h-full overflow-y-auto bg-[#102216] p-6">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Dashboard</h2>
+              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Panel Principal</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="card bg-[#162a1d] border border-[#1f3a28]">
                   <div className="card-body">
                     <h3 className="text-4xl font-bold text-[#13ec5b]">142</h3>
-                    <p className="text-gray-400">Reports Resolved</p>
+                    <p className="text-gray-400">Reportes Resueltos</p>
                   </div>
                 </div>
                 <div className="card bg-[#162a1d] border border-[#1f3a28]">
                   <div className="card-body">
                     <h3 className="text-4xl font-bold text-yellow-400">28</h3>
-                    <p className="text-gray-400">Currently Active</p>
+                    <p className="text-gray-400">Actualmente Activos</p>
                   </div>
                 </div>
                 <div className="card bg-[#162a1d] border border-[#1f3a28]">
                   <div className="card-body">
                     <h3 className="text-4xl font-bold text-red-400">4</h3>
-                    <p className="text-gray-400">High Priority Issues</p>
+                    <p className="text-gray-400">Prioridad Alta</p>
                   </div>
                 </div>
               </div>
@@ -218,16 +218,16 @@ function App() {
         {currentView === 'analytics' && (
           <div className="h-full overflow-y-auto bg-[#102216] p-6">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Analytics</h2>
-              <p className="text-gray-400">Analytics dashboard coming soon...</p>
+              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Estadísticas</h2>
+              <p className="text-gray-400">El panel de estadísticas estará disponible pronto...</p>
             </div>
           </div>
         )}
         {currentView === 'settings' && (
           <div className="h-full overflow-y-auto bg-[#102216] p-6">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Settings</h2>
-              <p className="text-gray-400">Settings panel coming soon...</p>
+              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Configuración</h2>
+              <p className="text-gray-400">El panel de configuración estará disponible pronto...</p>
             </div>
           </div>
         )}

@@ -30,7 +30,7 @@ def populate():
         {
             "titulo": "Fuego en ladera este",
             "categoria_id": cat_incendio,
-            "notas": "Pequeño foco visible cerca del arroyo.",
+            "description": "Pequeño foco visible cerca del arroyo.",
             "estado": "pendiente",
             "geom": {"type": "Point", "coordinates": [-64.442, -31.675]},
             "usuario_id": USER_ID,
@@ -39,7 +39,7 @@ def populate():
         {
             "titulo": "Trampa de lazo",
             "categoria_id": cat_trampa,
-            "notas": "Encontrada en sendero bajo.",
+            "description": "Encontrada en sendero bajo.",
             "estado": "pendiente",
             "geom": {"type": "Point", "coordinates": [-64.445, -31.680]},
             "usuario_id": USER_ID,
@@ -48,7 +48,7 @@ def populate():
         {
             "titulo": "Evento de limpieza",
             "categoria_id": cat_evento,
-            "notas": "Voluntarios trabajando en el mirador.",
+            "description": "Voluntarios trabajando en el mirador.",
             "estado": "aprobado",
             "geom": {"type": "Point", "coordinates": [-64.435, -31.670]},
             "usuario_id": USER_ID,
@@ -57,7 +57,7 @@ def populate():
         {
             "titulo": "Tala ilegal observada",
             "categoria_id": cat_tala,
-            "notas": "Posible extracción de madera nativa.",
+            "description": "Posible extracción de madera nativa.",
             "estado": "pendiente",
             "geom": {"type": "Point", "coordinates": [-64.440, -31.672]},
             "usuario_id": USER_ID

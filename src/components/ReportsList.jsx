@@ -1,14 +1,38 @@
 import { useState, useEffect } from 'react';
+import CustomSelect from './CustomSelect';
 
 function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     const [reports, setReports] = useState([]);
     const [selectedReportId, setSelectedReportId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [categories, setCategories] = useState([]);
+
+    // Filtros
+    const [filterCategory, setFilterCategory] = useState("Todas las categorías");
+    const [filterStatus, setFilterStatus] = useState("Todos los estados");
+    const [filterTime, setFilterTime] = useState("Últimos 30 días");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     useEffect(() => {
         fetchReports();
+        fetchCategories();
     }, []);
+
+    const fetchCategories = async () => {
+        try {
+            const apiBase = `http://${window.location.hostname}:8001`;
+            const response = await fetch(`${apiBase}/categorias`);
+            if (response.ok) {
+                const data = await response.json();
+                setCategories(data);
+            }
+        } catch (err) {
+            console.error("Error fetching categories:", err);
+        }
+    };
 
     const fetchReports = async () => {
         try {
@@ -53,13 +77,16 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                     status: status.label,
                     statusDot: status.dot,
                     statusText: status.text,
-                    observations: report.notas || 'Sin descripción',
+                    description: report.description || 'Sin descripción',
                     foto_url: report.foto_url,
                     coordinates: report.geom?.coordinates, // [lng, lat]
-                    locationName: `${report.geom?.coordinates?.[1].toFixed(4)}, ${report.geom?.coordinates?.[0].toFixed(4)}`,
+                    location: `${report.geom?.coordinates?.[1].toFixed(4)}, ${report.geom?.coordinates?.[0].toFixed(4)}`,
                     reporter: report.perfiles?.nombre_completo || 'Javier Moyano',
                     date: dateObj.toLocaleDateString('en-US'),
                     priority: report.titulo?.toLowerCase().includes('fuego') || report.estado === 'flagged' ? 'Alta' : 'Media',
+                    // Fields for editing
+                    rawStatus: report.estado,
+                    categoryId: report.categoria_id,
                 };
             });
 
@@ -74,13 +101,6 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
             setLoading(false);
         }
     };
-
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterCategory, setFilterCategory] = useState('Todas las categorías');
-    const [filterStatus, setFilterStatus] = useState('Todos los estados');
-    const [filterTime, setFilterTime] = useState('Últimos 30 días');
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
 
     const filteredReports = reports.filter(report => {
         const matchesSearch =
@@ -152,39 +172,43 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                 <div className="px-8 py-4 bg-[#102216]/30 flex flex-wrap items-center gap-4 border-b border-[#1f3a28]">
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Filtros:</span>
-                        <select
-                            value={filterCategory}
-                            onChange={(e) => setFilterCategory(e.target.value)}
-                            className="bg-[#162a1d] border-[#1f3a28] rounded-lg text-xs py-3 px-1 text-white focus:ring-[#13ec5b] focus:border-[#13ec5b]"
-                        >
-                            <option>Todas las categorías</option>
-                            <option>Incendio</option>
-                            <option>Trampa</option>
-                            <option>Evento</option>
-                            <option>Tala de árboles</option>
-                            <option>Basura</option>
-                        </select>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="bg-[#162a1d] border-[#1f3a28] rounded-lg text-xs py-3 px-1 text-white focus:ring-[#13ec5b] focus:border-[#13ec5b]"
-                        >
-                            <option>Todos los estados</option>
-                            <option>Pendiente</option>
-                            <option>In Progress</option>
-                            <option>Aprobado</option>
-                            <option>Resuelto</option>
-                            <option>Flaggeado</option>
-                        </select>
-                        <select
-                            value={filterTime}
-                            onChange={(e) => setFilterTime(e.target.value)}
-                            className="bg-[#162a1d] border-[#1f3a28] rounded-lg text-xs py-3 px-1 text-white focus:ring-[#13ec5b] focus:border-[#13ec5b]"
-                        >
-                            <option>Últimos 30 días</option>
-                            <option>Últimos 7 días</option>
-                            <option>Este mes</option>
-                        </select>
+                        <div className="w-56">
+                            <CustomSelect
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                                showIcon={false}
+                                options={[
+                                    { value: 'Todas las categorías', label: 'Todas las categorías' },
+                                    ...categories.map(cat => ({ value: cat.nombre, label: cat.nombre }))
+                                ]}
+                            />
+                        </div>
+                        <div className="w-48">
+                            <CustomSelect
+                                value={filterStatus}
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                                showIcon={false}
+                                options={[
+                                    { value: 'Todos los estados', label: 'Todos los estados' },
+                                    { value: 'pendiente', label: 'Pendiente' },
+                                    { value: 'en proceso', label: 'En proceso' },
+                                    { value: 'aprobado', label: 'Aprobado' },
+                                    { value: 'resuelto', label: 'Resuelto' }
+                                ]}
+                            />
+                        </div>
+                        <div className="w-48">
+                            <CustomSelect
+                                value={filterTime}
+                                onChange={(e) => setFilterTime(e.target.value)}
+                                showIcon={false}
+                                options={[
+                                    { value: 'Últimos 30 días', label: 'Últimos 30 días' },
+                                    { value: 'Últimos 7 días', label: 'Últimos 7 días' },
+                                    { value: 'Este mes', label: 'Este mes' }
+                                ]}
+                            />
+                        </div>
                     </div>
                     <div className="ml-auto flex items-center gap-2 text-xs text-slate-500">
                         <span>Mostrando <b className="text-white">{Math.min(filteredReports.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(filteredReports.length, currentPage * itemsPerPage)}</b> de <b className="text-white">{filteredReports.length}</b> resultados</span>
@@ -232,7 +256,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de envío</th>
                                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoría</th>
                                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Observaciones</th>
+                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Título</th>
                                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
                                         </tr>
                                     </thead>
@@ -264,8 +288,8 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="text-sm text-slate-300 max-w-[400px] whitespace-normal break-words leading-relaxed" title={report.observations}>
-                                                        {report.observations}
+                                                    <div className="text-sm text-slate-300 max-w-[400px] whitespace-normal break-words leading-relaxed" title={report.title}>
+                                                        {report.title}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">

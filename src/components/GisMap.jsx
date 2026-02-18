@@ -186,15 +186,22 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
   return (
     <div className="h-full w-full relative bg-[#0a2e1a]">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-[#1a2332] border-b border-gray-700/50 px-6 py-3 flex items-center justify-between">
+      <div className="absolute top-0 left-0 right-0 z-10 bg-[#162a1d]/80 backdrop-blur-md border-b border-[#1f3a28] px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#13ec37] rounded-lg flex items-center justify-center font-bold text-black">ECO</div>
+          <div className="w-8 h-8 rounded-lg bg-[#13ec5b]/20 flex items-center justify-center text-[#13ec5b]">
+            <span className="material-icons text-lg">explore</span>
+          </div>
           <div>
-            <div className="font-bold text-white text-lg">EcoReport GIS</div>
-            <div className="text-xs text-gray-400 uppercase tracking-wide">Rezerva Nature Reserve</div>
+            <h1 className="text-sm font-bold text-white uppercase tracking-widest leading-none">Explorador de Mapa</h1>
+            <p className="text-[9px] text-[#13ec5b]/60 uppercase font-bold tracking-widest mt-0.5">Monitoreo Ambiental</p>
           </div>
         </div>
-        <button className="btn btn-sm bg-[#13ec37] text-black border-none">Nuevo Reporte</button>
+        <button
+          onClick={() => onStartReport(-31.675, -64.442)}
+          className="bg-[#13ec5b] hover:bg-[#13ec5b]/80 text-[#081C15] text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg transition-all shadow-[0_4px_12px_rgba(19,236,91,0.2)]"
+        >
+          Nuevo Reporte
+        </button>
       </div>
 
       <div ref={mapContainer} className="w-full h-full" />
@@ -212,9 +219,9 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
         <div className="text-gray-400 font-mono">
           {coordinates.lat}° N | {coordinates.lng}° W
         </div>
-        <div className="flex items-center gap-2 text-[#13ec37]">
+        <div className="flex items-center gap-2 text-[#13ec5b]">
           <div className="w-2 h-2 bg-current rounded-full animate-pulse"></div>
-          CONNECTED TO FASTAPI
+          <span className="font-black tracking-widest uppercase text-[10px]">Conectado a FastAPI</span>
         </div>
       </div>
 
@@ -233,7 +240,7 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
               {selectedReport.categorias?.nombre || "Sin categoría"}
             </span>
             <h3 className="font-bold text-lg leading-tight mb-1">{selectedReport.titulo}</h3>
-            <p className="text-sm text-gray-600 mb-3">{selectedReport.notas}</p>
+            <p className="text-sm text-gray-600 mb-3">{selectedReport.description}</p>
             <div className="flex justify-between items-center bg-gray-50 p-2 rounded text-xs">
               <span className="capitalize">Estado: {selectedReport.estado}</span>
               <button onClick={() => setSelectedReport(null)} className="text-red-500 font-bold">Cerrar</button>

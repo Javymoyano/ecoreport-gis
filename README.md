@@ -1,62 +1,99 @@
-# EcoReport-GIS
+# 🌲 EcoReport-GIS: Gestión Forestal Inteligente
 
-Sistema de gestión de reportes geolocalizados para reservas naturales. Permite capturar incidentes en campo y gestionarlos desde una plataforma centralizada.
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-05998b?style=for-the-badge&logo=fastapi)
+![React](https://img.shields.io/badge/Frontend-React-61dafb?style=for-the-badge&logo=react)
+![Supabase](https://img.shields.io/badge/Database-Supabase%20%7C%20PostGIS-3ecf8e?style=for-the-badge&logo=supabase)
+![MapLibre](https://img.shields.io/badge/Maps-MapLibre%20GL-blue?style=for-the-badge&logo=maplibre)
 
-## Descripción del Proyecto
-
-La idea es que desde el visor de mapa se pueda agregar un reporte sobre lo encontrado en tiempo real dentro del terreno de la reserva.
-Para eso es necesario:
-*   Una **versión móvil** que solo va a levantar el reporte.
-*   Una **versión web** para gestionar todo, incluso también sumar un reporte.
-
-### Flujo de Generación de un Reporte
-
-1.  **Captura en Sitio**: El usuario activa la geolocalización en tiempo real sobre un mapa de MapLibre GL JS.
-2.  **Reporte**: Se crea aplicando presión sobre un punto en el mapa.
-    *   Genera un marcador y un tooltip preguntando si se quiere generar un reporte.
-    *   Si la respuesta es sí, se despliega un formulario con los datos a rellenar (los que aparecen en las tablas de Supabase).
-3.  **Enriquecimiento Multimedia e IA**:
-    *   Se captura una fotografía desde el navegador.
-    *   Para evitar la carga manual, un LLM categoriza automáticamente el reporte basado en la imagen o metadatos.
-4.  **Persistencia**: El dato viaja y se guarda en **Supabase (PostGIS)**, quedando disponible instantáneamente.
-
-### Arquitectura Técnica
-
-#### 1. Frontend (Recolección Móvil y Dashboard)
-*   **Tecnologías**: React, MapLibre GL JS.
-*   **Móvil**: Interfaz de alto contraste, optimizada para exteriores y consumo de batería. Uso de API de Geolocalización (`watchPosition`) y cámara.
-*   **Dashboard**: Plataforma web para análisis y gestión.
-
-#### 2. Backend (API en Python)
-*   **Tecnologías**: FastAPI, Pydantic, SQLAlchemy/Supabase-py.
-*   **Funciones**:
-    *   **CRUD Completo**: Crear, Leer, Actualizar y Borrar reportes.
-    *   **Validación**: Asegurar coordenadas válidas antes de guardar.
-    *   **Conexión**: Comunicación con Supabase.
-
-#### 3. Base de Datos (Supabase + PostGIS)
-*   **Motor**: PostgreSQL con extensión **PostGIS**.
-*   **Datos**: Almacenamiento de geometrías (Puntos, Líneas, Polígonos) con SRID 4326.
-*   **Seguridad**: RLS (Row Level Security) para controlar acceso (usuarios de campo solo ven/editan sus reportes).
+**EcoReport-GIS** es una solución profesional geofrenciada para el monitoreo de recursos naturales. Diseñada bajo una estética premium de alto contraste, permite la detección temprana de incidentes, la gestión de reportes multimedia y el análisis estadístico de la salud de la reserva.
 
 ---
 
-## Configuración de Desarrollo
+## 📸 Galería del Sistema
 
-### Requisitos Previos
-*   Node.js & npm
+| 🛰️ Explorador de Mapa | 📊 Historial de Reportes |
+| :---: | :---: |
+| ![Explorador](./screenshots/dashboard_main.png) | ![Historial](./screenshots/reports_history.png) |
+| *Visualización geofrenciada con capas satelitales.* | *Gestión centralizada con filtros avanzados.* |
+
+| 📝 Detalle de Incidente | 📍 Interacción en Mapa | ➕ Formulario de Ingreso |
+| :---: | :---: | :---: |
+| ![Detalle](./screenshots/report_detail.png) | ![Popup](./screenshots/map_popup.png) | ![Formulario](./screenshots/new_report_form.png) |
+| *Análisis de evidencia y estados.* | *Context menu para creación rápida.* | *Panel lateral con selectores inteligentes.* |
+
+---
+
+## 🔥 Características Técnicas Primordiales
+
+### 🛰️ Inteligencia Geoespacial (GIS)
+*   **Motor Cartográfico**: Implementación de MapLibre GL JS con capas personalizadas de MapTiler.
+*   **PostGIS Integration**: Consultas espaciales nativas para determinar la ubicación exacta de los incidentes.
+*   **Contextual Popups**: Interacción avanzada mediante clic derecho (context menu) para geolocalización precisa de nuevos hallazgos.
+
+### 🎨 Diseño Premium con UX Centrado
+*   **Stitch Design System**: Interfaz coherente de modo oscuro con acentos en verde neón (`#13ec5b`) para máxima visibilidad en tablets y móviles.
+*   **Custom Selectors**: Componentes de selección desarrollados a medida con iconografía dinámica y estados animados.
+*   **Success Feedback**: Sistema de modales de éxito y validaciones en tiempo real para asegurar la integridad del dato.
+
+### ⚙️ Arquitectura de Backend
+*   **FastAPI Core**: Gestión asíncrona de reportes y categorías.
+*   **Validación con Pydantic**: Modelado estricto de datos para evitar inconsistencias en la base de datos.
+*   **Seguridad RLS (Supabase)**: Políticas de seguridad a nivel de fila que permiten operaciones seguras directamente en la API.
+
+---
+
+## 🛠️ Stack Tecnológico
+
+*   **Frontend**: React (Vite), Tailwind CSS, Material Icons.
+*   **Backend**: Python 3.10+, FastAPI, SQLAlchemy.
+*   **Infraestructura**: Supabase (PostgreSQL + PostGIS).
+*   **Servicios**: MapTiler API para estilos de mapa vectoriales y satelitales.
+
+---
+
+## 🚀 Instalación y Despliegue
+
+### Requisitos
+*   Node.js 18+
 *   Python 3.8+
-*   Cuenta en Supabase
+*   Variables de entorno: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `MAPTILER_KEY`.
 
-### Instalación Frontend
-```bash
-npm install
-npm run dev
+### Pasos Rápidos
+1.  **Frontend**: 
+    ```bash
+    npm install
+    npm run dev
+    ```
+2.  **Backend**:
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    uvicorn main:app --reload --port 8001
+    ```
+
+---
+
+## 📊 Estructura de la Base de Datos
+El proyecto utiliza una extensión geográfica para PostgreSQL (`PostGIS`):
+
+```sql
+-- Ejemplo de la tabla principal
+CREATE TABLE reportes (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  titulo text NOT NULL,
+  description text,
+  ubicacion geometry(Point, 4326), -- Almacenamiento espacial
+  estado text DEFAULT 'pendiente',
+  categoria_id uuid REFERENCES categorias(id)
+);
 ```
 
-### Instalación Backend
-```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+---
+
+## 🛡️ Seguridad
+Se han implementado políticas **RLS (Row Level Security)** en Supabase para permitir:
+*   Lectura pública de reportes para visualización en mapa.
+*   Inserción y actualización controlada para usuarios registrados y anónimos (según configuración).
+
+---
+*Desarrollado para la protección y preservación consciente del medio ambiente.*
