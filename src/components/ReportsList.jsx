@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import CustomSelect from './CustomSelect';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     const [reports, setReports] = useState([]);
@@ -7,6 +8,9 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [categories, setCategories] = useState([]);
+    const [statuses, setStatuses] = useState([]);
+    const [deleteModal, setDeleteModal] = useState({ show: false, report: null });
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Filtros
     const [filterCategory, setFilterCategory] = useState("Todas las categorías");
@@ -19,7 +23,22 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     useEffect(() => {
         fetchReports();
         fetchCategories();
+        fetchStatuses();
     }, []);
+
+    const fetchStatuses = async () => {
+        try {
+            const apiBase = `http://${window.location.hostname}:8001`;
+
+            const response = await fetch(`${apiBase}/estados`);
+            if (response.ok) {
+                const data = await response.json();
+                setStatuses(data);
+            }
+        } catch (err) {
+            console.error("Error fetching statuses:", err);
+        }
+    };
 
     const fetchCategories = async () => {
         try {
@@ -55,37 +74,38 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                     'Tala de árboles': 'bg-red-700/10 text-red-700 border-red-700/20',
                 };
 
-                const statusMap = {
-                    'pendiente': { dot: 'bg-yellow-500', text: 'text-yellow-500', label: 'Pendiente' },
-                    'en progreso': { dot: 'bg-blue-500', text: 'text-blue-500', label: 'In Progress' },
-                    'aprobado': { dot: 'bg-[#13ec5b]', text: 'text-[#13ec5b]', label: 'Aprobado' },
-                    'rechazado': { dot: 'bg-red-500', text: 'text-red-500', label: 'Rechazado' },
-                    'resuelto': { dot: 'bg-[#13ec5b]', text: 'text-[#13ec5b]', label: 'Resuelto' },
+                const statusColors = {
+                    'Pendiente': { dot: 'bg-yellow-500', text: 'text-yellow-500' },
+                    'En Proceso': { dot: 'bg-blue-500', text: 'text-blue-500' },
+                    'Resuelto': { dot: 'bg-[#13ec5b]', text: 'text-[#13ec5b]' },
                 };
 
-                const status = statusMap[report.estado?.toLowerCase()] || { dot: 'bg-slate-400', text: '', label: report.estado || 'Open' };
+                const statusName = report.estados?.nombre || 'Pendiente';
+                const statusStyle = statusColors[statusName] || { dot: 'bg-slate-400', text: 'text-slate-400' };
+
                 const categoryName = report.categorias?.nombre || 'General';
 
                 return {
-                    id: report.id.substring(0, 8), // Use short ID for display
+                    id: report.id.substring(0, 8),
                     fullId: report.id,
                     title: report.titulo,
                     submitted: dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
                     time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
                     category: categoryName,
                     categoryColor: categoryStyles[categoryName] || 'bg-slate-500/10 text-slate-500 border-slate-500/20',
-                    status: status.label,
-                    statusDot: status.dot,
-                    statusText: status.text,
+                    status: statusName,
+                    statusDot: statusStyle.dot,
+                    statusText: statusStyle.text,
                     description: report.description || 'Sin descripción',
                     foto_url: report.foto_url,
                     coordinates: report.geom?.coordinates, // [lng, lat]
                     location: `${report.geom?.coordinates?.[1].toFixed(4)}, ${report.geom?.coordinates?.[0].toFixed(4)}`,
                     reporter: report.perfiles?.nombre_completo || 'Javier Moyano',
                     date: dateObj.toLocaleDateString('en-US'),
-                    priority: report.titulo?.toLowerCase().includes('fuego') || report.estado === 'flagged' ? 'Alta' : 'Media',
+                    priority: report.titulo?.toLowerCase().includes('fuego') ? 'Alta' : 'Media',
                     // Fields for editing
-                    rawStatus: report.estado,
+                    rawStatus: report.estado_id,
+                    statusId: report.estado_id,
                     categoryId: report.categoria_id,
                 };
             });
@@ -102,12 +122,49 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
         }
     };
 
+    const handleDeleteReport = async () => {
+        if (!deleteModal.report) return;
+
+        try {
+            setIsDeleting(true);
+            const apiBase = `http://${window.location.hostname}:8001`;
+            const response = await fetch(`${apiBase}/reportes/${deleteModal.report.fullId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                setReports(prev => prev.filter(r => r.fullId !== deleteModal.report.fullId));
+                if (selectedReportId === deleteModal.report.id) {
+                    setSelectedReportId(null);
+                }
+                setDeleteModal({ show: false, report: null });
+            } else {
+                const errorData = await response.json();
+                alert(`Error al eliminar: ${errorData.error || 'Error desconocido'}`);
+            }
+        } catch (err) {
+            console.error("Error deleting report:", err);
+            alert("Error de conexión al intentar eliminar el reporte.");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleClearSearch = () => {
+        setSearchTerm("");
+    };
+
     const filteredReports = reports.filter(report => {
-        const matchesSearch =
-            report.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            report.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            report.reporter.toLowerCase().includes(searchTerm.toLowerCase());
+        // Multi-word search logic
+        const searchWords = searchTerm.toLowerCase().split(' ').filter(word => word.length > 0);
+
+        const matchesSearch = searchWords.length === 0 || searchWords.every(word =>
+            report.id.toLowerCase().includes(word) ||
+            report.title.toLowerCase().includes(word) ||
+            report.category.toLowerCase().includes(word) ||
+            report.reporter.toLowerCase().includes(word) ||
+            report.description.toLowerCase().includes(word)
+        );
 
         const matchesCategory = filterCategory === 'Todas las categorías' || report.category === filterCategory;
         const matchesStatus = filterStatus === 'Todos los estados' || report.status === filterStatus;
@@ -150,11 +207,21 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                             </svg>
                             <input
                                 type="text"
-                                placeholder="Buscar reporte por ID, titulo o rango..."
+                                placeholder="Buscar reporte por ID, titulo o descripción..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 bg-[#102216] border-transparent focus:border-[#13ec5b] focus:ring-0 rounded-lg text-sm w-72 text-white placeholder-slate-500"
+                                className="pl-10 pr-10 py-2 bg-[#102216] border border-[#1f3a28] focus:border-[#13ec5b] focus:ring-0 rounded-lg text-sm w-80 text-white placeholder-slate-500 transition-all"
                             />
+                            {searchTerm && (
+                                <button
+                                    onClick={handleClearSearch}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                         <button
                             onClick={onNewReport}
@@ -190,10 +257,10 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                                 showIcon={false}
                                 options={[
                                     { value: 'Todos los estados', label: 'Todos los estados' },
-                                    { value: 'pendiente', label: 'Pendiente' },
-                                    { value: 'en proceso', label: 'En proceso' },
-                                    { value: 'aprobado', label: 'Aprobado' },
-                                    { value: 'resuelto', label: 'Resuelto' }
+                                    ...statuses.map(s => ({
+                                        value: s.nombre,
+                                        label: s.nombre
+                                    }))
                                 ]}
                             />
                         </div>
@@ -297,20 +364,19 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); onViewOnMap(report.coordinates); }}
                                                             className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400"
-                                                            title="View on Map"
+                                                            title="Ver en Mapa"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
                                                             </svg>
                                                         </button>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); onSelectReport(report); }}
-                                                            className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400"
-                                                            title="View Details"
+                                                            onClick={(e) => { e.stopPropagation(); setDeleteModal({ show: true, report }); }}
+                                                            className="p-2 hover:bg-red-500/20 hover:text-red-500 rounded-lg text-slate-400"
+                                                            title="Eliminar Reporte"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                                                             </svg>
                                                         </button>
                                                     </div>
@@ -446,7 +512,17 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                     </button>
                 </div>
             </div>
-        </div >
+
+            {/* Overlays */}
+            {deleteModal.show && (
+                <DeleteConfirmModal
+                    reportTitle={deleteModal.report?.title}
+                    onConfirm={handleDeleteReport}
+                    onCancel={() => setDeleteModal({ show: false, report: null })}
+                    isDeleting={isDeleting}
+                />
+            )}
+        </div>
     );
 }
 

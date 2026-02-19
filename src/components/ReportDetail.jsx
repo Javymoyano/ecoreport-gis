@@ -10,6 +10,7 @@ function ReportDetail({ report, onBack }) {
         estado: ''
     });
     const [categories, setCategories] = useState([]);
+    const [statuses, setStatuses] = useState([]);
     const [isSaving, setIsSaving] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -19,15 +20,16 @@ function ReportDetail({ report, onBack }) {
                 titulo: report.title || '',
                 description: report.description || '',
                 categoria_id: report.categoryId || '',
-                estado: report.rawStatus || 'pendiente'
+                estado_id: report.statusId || ''
             });
         }
     }, [report, isEditing]);
 
     useEffect(() => {
+        const apiBase = `http://${window.location.hostname}:8001`;
+
         const fetchCategories = async () => {
             try {
-                const apiBase = `http://${window.location.hostname}:8001`;
                 const response = await fetch(`${apiBase}/categorias`);
                 const data = await response.json();
                 setCategories(data);
@@ -35,7 +37,19 @@ function ReportDetail({ report, onBack }) {
                 console.error('Error fetching categories:', error);
             }
         };
+
+        const fetchStatuses = async () => {
+            try {
+                const response = await fetch(`${apiBase}/estados`);
+                const data = await response.json();
+                setStatuses(data);
+            } catch (error) {
+                console.error('Error fetching statuses:', error);
+            }
+        };
+
         fetchCategories();
+        fetchStatuses();
     }, []);
 
     if (!report) return null;
@@ -55,7 +69,7 @@ function ReportDetail({ report, onBack }) {
             const payload = {
                 titulo: formData.titulo,
                 description: formData.description,
-                estado: formData.estado,
+                estado_id: formData.estado_id,
                 categoria_id: formData.categoria_id || null
             };
 
@@ -176,16 +190,13 @@ function ReportDetail({ report, onBack }) {
                             <div className="flex items-center gap-3 mb-4">
                                 {isEditing ? (
                                     <CustomSelect
-                                        name="estado"
-                                        value={formData.estado}
+                                        name="estado_id"
+                                        value={formData.estado_id}
                                         onChange={handleChange}
-                                        options={[
-                                            { value: 'pendiente', label: 'Pendiente' },
-                                            { value: 'en proceso', label: 'En proceso' },
-                                            { value: 'aprobado', label: 'Aprobado' },
-                                            { value: 'resuelto', label: 'Resuelto' },
-                                            { value: 'rechazado', label: 'Rechazado' }
-                                        ]}
+                                        options={statuses.map(s => ({
+                                            value: s.id,
+                                            label: s.nombre
+                                        }))}
                                     />
                                 ) : (
                                     <span className="bg-primary-forest/40 text-green-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border border-primary-accent/30">

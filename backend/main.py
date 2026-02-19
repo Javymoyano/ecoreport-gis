@@ -31,7 +31,12 @@ def read_root():
 
 @app.get("/reportes")
 def get_reportes():
-    response = supabase.table("reportes").select("*, categorias(nombre), perfiles(nombre_completo)").execute()
+    response = supabase.table("reportes").select("*, categorias(nombre), estados(nombre), perfiles(nombre_completo)").execute()
+    return response.data
+
+@app.get("/estados")
+def get_estados():
+    response = supabase.table("estados").select("*").execute()
     return response.data
 
 @app.get("/categorias")

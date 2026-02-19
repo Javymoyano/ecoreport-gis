@@ -4,22 +4,23 @@ import SuccessModal from './SuccessModal';
 
 function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
     const [categories, setCategories] = useState([]);
+    const [statuses, setStatuses] = useState([]);
     const [submittedReport, setSubmittedReport] = useState(null);
     const [formData, setFormData] = useState({
         titulo: '',
         categoria_id: '',
         description: '',
         foto_url: '',
-        estado: 'pendiente'
+        estado_id: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const USER_ID = "d794da38-a394-4036-8495-cbaf3d594c97"; // Default for now
 
     useEffect(() => {
-        // Fetch categories from the backend
+        const apiBase = `http://${window.location.hostname}:8001`;
+
         const fetchCategories = async () => {
-            const apiBase = `http://${window.location.hostname}:8001`;
             try {
                 const response = await fetch(`${apiBase}/categorias`);
                 const data = await response.json();
@@ -28,15 +29,28 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
                 }
             } catch (error) {
                 console.error('Error fetching categories:', error);
-                // Fallback con UUIDs válidos para evitar errores de validación en el backend
-                setCategories([
-                    { id: '4d95d163-a48b-41af-9d3a-254393e09871', nombre: 'Basura' },
-                    { id: 'b742a4c7-6e25-4949-9c84-1266b9a7edb3', nombre: 'Evento' },
-                    { id: 'c9a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', nombre: 'Incendio' }
-                ]);
             }
         };
+
+        const fetchStatuses = async () => {
+            try {
+                const response = await fetch(`${apiBase}/estados`);
+                const data = await response.json();
+                if (data && data.length > 0) {
+                    setStatuses(data);
+                    // Set default status to 'pendiente'
+                    const pendingStatus = data.find(s => s.nombre === 'pendiente');
+                    if (pendingStatus) {
+                        setFormData(prev => ({ ...prev, estado_id: pendingStatus.id }));
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching statuses:', error);
+            }
+        };
+
         fetchCategories();
+        fetchStatuses();
     }, []);
 
 
@@ -60,7 +74,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
             titulo: formData.titulo,
             categoria_id: formData.categoria_id,
             description: formData.description,
-            estado: formData.estado,
+            estado_id: formData.estado_id,
             geom: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
             usuario_id: USER_ID,
             foto_url: formData.foto_url || `https://placehold.co/600x400?text=${formData.titulo}`
@@ -167,15 +181,13 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
                         <div>
                             <label className="block text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300 uppercase tracking-widest text-[10px]">Estado Inicial</label>
                             <CustomSelect
-                                name="estado"
-                                value={formData.estado}
+                                name="estado_id"
+                                value={formData.estado_id}
                                 onChange={handleChange}
-                                options={[
-                                    { value: 'pendiente', label: 'Pendiente' },
-                                    { value: 'en proceso', label: 'En proceso' },
-                                    { value: 'aprobado', label: 'Aprobado' },
-                                    { value: 'resuelto', label: 'Resuelto' }
-                                ]}
+                                options={statuses.map(s => ({
+                                    value: s.id,
+                                    label: s.nombre
+                                }))}
                             />
                         </div>
                     </div>

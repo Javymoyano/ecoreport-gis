@@ -141,7 +141,8 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
       const el = document.createElement('div');
       el.className = 'custom-marker';
 
-      const markerColor = report.estado === 'pendiente' ? '#f59e0b' : '#13ec37';
+      const statusName = report.estados?.nombre || 'pendiente';
+      const markerColor = statusName === 'pendiente' ? '#f59e0b' : '#13ec37';
 
       el.style.cssText = `
         width: 36px;
@@ -242,7 +243,7 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
             <h3 className="font-bold text-lg leading-tight mb-1">{selectedReport.titulo}</h3>
             <p className="text-sm text-gray-600 mb-3">{selectedReport.description}</p>
             <div className="flex justify-between items-center bg-gray-50 p-2 rounded text-xs">
-              <span className="capitalize">Estado: {selectedReport.estado}</span>
+              <span className="capitalize">Estado: {selectedReport.estados?.nombre || 'pendiente'}</span>
               <button onClick={() => setSelectedReport(null)} className="text-red-500 font-bold">Cerrar</button>
             </div>
           </div>
