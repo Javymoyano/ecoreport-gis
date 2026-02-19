@@ -1,4 +1,4 @@
-# 🌲 EcoReport-GIS: Gestión Forestal Inteligente
+# EcoReport-GIS: Gestión Forestal Inteligente
 
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-05998b?style=for-the-badge&logo=fastapi)
 ![React](https://img.shields.io/badge/Frontend-React-61dafb?style=for-the-badge&logo=react)
