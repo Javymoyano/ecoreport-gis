@@ -29,7 +29,6 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     const fetchStatuses = async () => {
         try {
             const apiBase = `http://${window.location.hostname}:8001`;
-
             const response = await fetch(`${apiBase}/estados`);
             if (response.ok) {
                 const data = await response.json();
@@ -67,7 +66,6 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
 
                 // Category styling mapping
                 const categoryStyles = {
-
                     'Incendio': 'bg-orange-500/10 text-orange-500 border-orange-500/20',
                     'Trampa': 'bg-red-500/10 text-red-500 border-red-500/20',
                     'Evento': 'bg-green-500/10 text-green-500 border-green-500/20',
@@ -116,7 +114,6 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
             }
             setLoading(false);
         } catch (err) {
-            console.error('Error fetching reports:', err);
             setError(err.message);
             setLoading(false);
         }
@@ -124,9 +121,9 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
 
     const handleDeleteReport = async () => {
         if (!deleteModal.report) return;
+        setIsDeleting(true);
 
         try {
-            setIsDeleting(true);
             const apiBase = `http://${window.location.hostname}:8001`;
             const response = await fetch(`${apiBase}/reportes/${deleteModal.report.fullId}`, {
                 method: 'DELETE',
@@ -134,17 +131,13 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
 
             if (response.ok) {
                 setReports(prev => prev.filter(r => r.fullId !== deleteModal.report.fullId));
-                if (selectedReportId === deleteModal.report.id) {
-                    setSelectedReportId(null);
-                }
                 setDeleteModal({ show: false, report: null });
             } else {
-                const errorData = await response.json();
-                alert(`Error al eliminar: ${errorData.error || 'Error desconocido'}`);
+                alert("Error al eliminar el reporte");
             }
         } catch (err) {
-            console.error("Error deleting report:", err);
-            alert("Error de conexión al intentar eliminar el reporte.");
+            console.error("Delete error:", err);
+            alert("Error de conexión al eliminar");
         } finally {
             setIsDeleting(false);
         }
@@ -177,7 +170,9 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
             const sevenDaysAgo = new Date(now.setDate(now.getDate() - 7));
             matchesTime = reportDate >= sevenDaysAgo;
         } else if (filterTime === 'Este mes') {
-            matchesTime = reportDate.getMonth() === new Date().getMonth() && reportDate.getFullYear() === new Date().getFullYear();
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            matchesTime = reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear;
         }
 
         return matchesSearch && matchesCategory && matchesStatus && matchesTime;
@@ -194,23 +189,23 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     const selectedReport = filteredReports.find(r => r.id === selectedReportId) || paginatedReports[0];
 
     return (
-        <div className="h-full flex bg-[#102216]">
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col lg:flex-row bg-[#102216] overflow-hidden">
+            {/* Main Content wrapper */}
+            <div className="flex-1 flex flex-col min-w-0 min-h-0">
                 {/* Header */}
-                <div className="h-16 border-b border-[#1f3a28] bg-[#162a1d]/80 backdrop-blur-md flex items-center justify-between px-8">
-                    <h1 className="text-xl font-bold">Historial de Reportes</h1>
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
+                <div className="flex-shrink-0 border-b border-[#1f3a28] bg-[#162a1d]/80 backdrop-blur-md flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 md:px-8 py-4 sm:py-0 sm:h-20 gap-4 sm:gap-0">
+                    <h1 className="text-xl font-bold whitespace-nowrap">Historial de Reportes</h1>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:flex-none">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                             </svg>
                             <input
                                 type="text"
-                                placeholder="Buscar reporte por ID, titulo o descripción..."
+                                placeholder="Buscar reporte..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-10 py-2 bg-[#102216] border border-[#1f3a28] focus:border-[#13ec5b] focus:ring-0 rounded-lg text-sm w-80 text-white placeholder-slate-500 transition-all"
+                                className="pl-10 pr-10 py-2 bg-[#102216] border border-[#1f3a28] focus:border-[#13ec5b] focus:ring-0 rounded-lg text-sm w-full sm:w-64 md:w-80 text-white placeholder-slate-500 transition-all"
                             />
                             {searchTerm && (
                                 <button
@@ -225,7 +220,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                         </div>
                         <button
                             onClick={onNewReport}
-                            className="bg-[#13ec5b] hover:bg-[#13ec5b]/90 text-[#102216] font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-transform active:scale-95"
+                            className="bg-[#13ec5b] hover:bg-[#13ec5b]/90 text-[#102216] font-semibold px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -236,10 +231,10 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                 </div>
 
                 {/* Filters Bar */}
-                <div className="px-8 py-4 bg-[#102216]/30 flex flex-wrap items-center gap-4 border-b border-[#1f3a28]">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Filtros:</span>
-                        <div className="w-56">
+                <div className="flex-shrink-0 px-4 md:px-8 py-4 bg-[#102216]/30 flex flex-col md:flex-row items-stretch md:items-center gap-4 border-b border-[#1f3a28]">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider hidden sm:inline">Filtros:</span>
+                        <div className="flex-1 min-w-[140px]">
                             <CustomSelect
                                 value={filterCategory}
                                 onChange={(e) => setFilterCategory(e.target.value)}
@@ -250,7 +245,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                                 ]}
                             />
                         </div>
-                        <div className="w-48">
+                        <div className="flex-1 min-w-[140px]">
                             <CustomSelect
                                 value={filterStatus}
                                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -264,7 +259,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                                 ]}
                             />
                         </div>
-                        <div className="w-48">
+                        <div className="flex-1 min-w-[140px]">
                             <CustomSelect
                                 value={filterTime}
                                 onChange={(e) => setFilterTime(e.target.value)}
@@ -277,239 +272,296 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
                             />
                         </div>
                     </div>
-                    <div className="ml-auto flex items-center gap-2 text-xs text-slate-500">
-                        <span>Mostrando <b className="text-white">{Math.min(filteredReports.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(filteredReports.length, currentPage * itemsPerPage)}</b> de <b className="text-white">{filteredReports.length}</b> resultados</span>
+                    <div className="flex items-center justify-between md:justify-end gap-2 text-xs text-slate-500 border-t border-[#1f3a28] md:border-t-0 pt-4 md:pt-0">
+                        <span className="sm:hidden">Resultados:</span>
+                        <span>Mostrando <b className="text-white">{Math.min(filteredReports.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(filteredReports.length, currentPage * itemsPerPage)}</b> de <b className="text-white">{filteredReports.length}</b></span>
                     </div>
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-auto p-8">
-                    {loading ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
-                            <div className="w-12 h-12 border-4 border-[#13ec5b] border-t-transparent rounded-full animate-spin"></div>
-                            <p className="font-medium animate-pulse">Cargando reportes históricos...</p>
-                        </div>
-                    ) : error ? (
-                        <div className="h-full flex flex-col items-center justify-center text-red-500 gap-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                            </svg>
-                            <div className="text-center">
-                                <p className="font-bold text-lg">Error al cargar datos</p>
-                                <p className="text-sm opacity-70">{error}</p>
+                <div className="flex-1 min-h-0 overflow-y-auto scroll-smooth custom-scrollbar overscroll-behavior-y-contain">
+                    <div className="p-4 md:p-8">
+                        {loading ? (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-4 py-12">
+                                <div className="w-12 h-12 border-4 border-[#13ec5b] border-t-transparent rounded-full animate-spin"></div>
+                                <p className="font-medium animate-pulse">Cargando reportes históricos...</p>
                             </div>
-                            <button
-                                onClick={fetchReports}
-                                className="mt-4 px-6 py-2 bg-[#13ec5b] text-[#102216] font-bold rounded-lg hover:bg-[#13ec5b]/90 transition-colors"
-                            >
-                                Reintentar
-                            </button>
-                        </div>
-                    ) : reports.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 opacity-30">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                            </svg>
-                            <p className="font-medium text-lg">No se encontraron reportes</p>
-                            <p className="text-sm">El historial de la base de datos está vacío.</p>
-                        </div>
-                    ) : (
-                        <div className="bg-[#162a1d] border border-[#1f3a28] rounded-xl shadow-2xl flex flex-col overflow-hidden">
-                            <div className="overflow-x-auto custom-scrollbar">
-                                <table className="w-full text-left border-collapse min-w-[800px]">
-                                    <thead>
-                                        <tr className="border-b border-[#1f3a28] bg-white/5">
-                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">ID del reporte</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de envío</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoría</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Título</th>
-                                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[#1f3a28]">
-                                        {paginatedReports.map((report) => (
-                                            <tr
-                                                key={report.fullId}
-                                                onClick={() => {
-                                                    setSelectedReportId(report.id);
-                                                    // Opcional: onSelectReport(report); // Si queremos que al click abra directo
-                                                }}
-                                                onDoubleClick={() => onSelectReport(report)}
-                                                className={`hover:bg-white/5 transition-colors group cursor-pointer ${selectedReportId === report.id ? 'bg-[#13ec5b]/5' : ''}`}
-                                            >
-                                                <td className="px-6 py-4 font-mono text-sm text-[#13ec5b] font-medium">#{report.id}</td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm font-medium text-white">{report.submitted}</div>
-                                                    <div className="text-xs text-slate-500">{report.time}</div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${report.categoryColor}`}>
-                                                        {report.category}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`w-2 h-2 rounded-full ${report.statusDot}`}></span>
-                                                        <span className={`text-sm ${report.statusText}`}>{report.status}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="text-sm text-slate-300 max-w-[400px] whitespace-normal break-words leading-relaxed" title={report.title}>
-                                                        {report.title}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); onViewOnMap(report.coordinates); }}
-                                                            className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400"
-                                                            title="Ver en Mapa"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setDeleteModal({ show: true, report }); }}
-                                                            className="p-2 hover:bg-red-500/20 hover:text-red-500 rounded-lg text-slate-400"
-                                                            title="Eliminar Reporte"
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                        ) : error ? (
+                            <div className="h-full flex flex-col items-center justify-center text-red-500 gap-4 py-12 text-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                                </svg>
+                                <div>
+                                    <p className="font-bold text-lg">Error al cargar datos</p>
+                                    <p className="text-sm opacity-70">{error}</p>
+                                </div>
+                                <button
+                                    onClick={fetchReports}
+                                    className="mt-4 px-6 py-2 bg-[#13ec5b] text-[#102216] font-bold rounded-lg hover:bg-[#13ec5b]/90 transition-colors"
+                                >
+                                    Reintentar
+                                </button>
+                            </div>
+                        ) : reports.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-500 gap-4 py-12 text-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 opacity-30">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                                </svg>
+                                <p className="font-medium text-lg">No se encontraron reportes</p>
+                                <p className="text-sm">El historial de la base de datos está vacío.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 flex flex-col min-h-full">
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block bg-[#162a1d] border border-[#1f3a28] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left border-collapse min-w-[800px]">
+                                            <thead>
+                                                <tr className="border-b border-[#1f3a28] bg-white/5">
+                                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">ID del reporte</th>
+                                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de envío</th>
+                                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoría</th>
+                                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
+                                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Título</th>
+                                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#1f3a28]">
+                                                {paginatedReports.map((report) => (
+                                                    <tr
+                                                        key={report.fullId}
+                                                        onClick={() => setSelectedReportId(report.id)}
+                                                        onDoubleClick={() => onSelectReport(report)}
+                                                        className={`hover:bg-white/5 transition-colors group cursor-pointer ${selectedReportId === report.id ? 'bg-[#13ec5b]/5' : ''}`}
+                                                    >
+                                                        <td className="px-6 py-4 font-mono text-sm text-[#13ec5b] font-medium">#{report.id}</td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="text-sm font-medium text-white">{report.submitted}</div>
+                                                            <div className="text-xs text-slate-500">{report.time}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${report.categoryColor}`}>
+                                                                {report.category}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`w-2 h-2 rounded-full ${report.statusDot}`}></span>
+                                                                <span className={`text-sm ${report.statusText}`}>{report.status}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="text-sm text-slate-300 max-w-[400px] whitespace-normal break-words leading-relaxed" title={report.title}>
+                                                                {report.title}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); onViewOnMap(report.coordinates); }}
+                                                                    className="p-2 hover:bg-[#13ec5b]/20 hover:text-[#13ec5b] rounded-lg text-slate-400"
+                                                                    title="Ver en Mapa"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+                                                                    </svg>
+                                                                </button>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); setDeleteModal({ show: true, report }); }}
+                                                                    className="p-2 hover:bg-red-500/20 hover:text-red-500 rounded-lg text-slate-400"
+                                                                    title="Eliminar Reporte"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
 
-                                {/* Pagination Controls */}
-                                {totalPages > 1 && (
-                                    <div className="px-6 py-4 bg-white/5 border-t border-[#1f3a28] flex items-center justify-between">
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                                                disabled={currentPage === 1}
-                                                className="px-3 py-1 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
-                                            >
-                                                Anterior
-                                            </button>
-                                            <button
-                                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                                                disabled={currentPage === totalPages}
-                                                className="px-3 py-1 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
-                                            >
-                                                Siguiente
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                {/* Mobile Card View */}
+                                <div className="md:hidden space-y-4">
+                                    {paginatedReports.map((report) => (
+                                        <div
+                                            key={report.fullId}
+                                            onClick={() => onSelectReport(report)}
+                                            className={`bg-[#162a1d] border ${selectedReportId === report.id ? 'border-[#13ec5b]' : 'border-[#1f3a28]'} rounded-xl p-4 shadow-xl active:bg-white/5 transition-all`}
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="font-mono text-xs text-[#13ec5b] font-medium">#{report.id}</span>
+                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${report.categoryColor}`}>
+                                                    {report.category}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-white font-bold text-sm mb-2 line-clamp-2">{report.title}</h3>
+                                            <div className="flex justify-between items-center text-[11px] text-slate-400">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${report.statusDot}`}></span>
+                                                    <span className={report.statusText}>{report.status}</span>
+                                                </div>
+                                                <span>{report.submitted}</span>
+                                            </div>
+                                            <div className="mt-4 pt-3 border-t border-[#1f3a28] flex justify-end gap-4">
                                                 <button
-                                                    key={page}
-                                                    onClick={() => setCurrentPage(page)}
-                                                    className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold transition-all ${currentPage === page ? 'bg-[#13ec5b] text-[#102216]' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                                                    onClick={(e) => { e.stopPropagation(); onViewOnMap(report.coordinates); }}
+                                                    className="text-[#13ec5b] text-xs font-bold uppercase tracking-wider"
                                                 >
-                                                    {page}
+                                                    Ver en Mapa
                                                 </button>
-                                            ))}
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setDeleteModal({ show: true, report }); }}
+                                                    className="text-red-500 text-xs font-bold uppercase tracking-wider"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Pagination and Quick Stats */}
+                                <div className="mt-auto pt-4 space-y-8">
+                                    {/* Pagination Controls */}
+                                    {totalPages > 1 && (
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2">
+                                            <div className="flex gap-2 w-full sm:w-auto">
+                                                <button
+                                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                                    disabled={currentPage === 1}
+                                                    className="flex-1 sm:flex-none px-4 py-2 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
+                                                >
+                                                    Anterior
+                                                </button>
+                                                <button
+                                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                                    disabled={currentPage === totalPages}
+                                                    className="flex-1 sm:flex-none px-4 py-2 bg-[#102216] border border-[#1f3a28] rounded-md text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#13ec5b] transition-colors"
+                                                >
+                                                    Siguiente
+                                                </button>
+                                            </div>
+                                            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 sm:pb-0 w-full sm:w-auto justify-center">
+                                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                                                    <button
+                                                        key={page}
+                                                        onClick={() => setCurrentPage(page)}
+                                                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-md text-xs font-bold transition-all ${currentPage === page ? 'bg-[#13ec5b] text-[#102216]' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+                                                    >
+                                                        {page}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Quick Stats */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="bg-[#13ec5b]/5 border border-[#13ec5b]/20 p-4 rounded-xl flex items-center gap-4 shadow-lg shadow-[#13ec5b]/5">
+                                            <div className="w-10 h-10 bg-[#13ec5b] rounded-lg flex items-center justify-center text-[#102216] flex-shrink-0">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-xl font-bold text-white">{reports.filter(r => r.status === 'Resuelto' || r.status === 'Aprobado').length}</p>
+                                                <p className="text-[10px] text-slate-500 uppercase font-semibold">Resueltos</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-[#162a1d]/40 border border-[#1f3a28] p-4 rounded-xl flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center text-blue-500 flex-shrink-0">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-xl font-bold text-white">{reports.filter(r => r.status === 'En Proceso' || r.status === 'Pendiente').length}</p>
+                                                <p className="text-[10px] text-slate-500 uppercase font-semibold">Pendientes</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-[#162a1d]/40 border border-[#1f3a28] p-4 rounded-xl flex items-center gap-4">
+                                            <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center text-red-500 flex-shrink-0">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p className="text-xl font-bold text-white">{reports.filter(r => r.category === 'Incendio' || r.category === 'Tala de árboles').length}</p>
+                                                <p className="text-[10px] text-slate-500 uppercase font-semibold">Alta Prioridad</p>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
-                        </div>
-                    )}
-
-                    {/* Quick Stats */}
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-[#13ec5b]/5 border border-[#13ec5b]/20 p-4 rounded-xl flex items-center gap-4 shadow-lg shadow-[#13ec5b]/5">
-                            <div className="w-12 h-12 bg-[#13ec5b] rounded-lg flex items-center justify-center text-[#102216] shadow-inner">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-white">{reports.filter(r => r.status === 'Resuelto' || r.status === 'Aprobado').length}</p>
-                                <p className="text-xs text-slate-500 uppercase font-semibold">Reportes Resueltos</p>
-                            </div>
-                        </div>
-                        <div className="bg-[#162a1d]/40 border border-[#1f3a28] p-4 rounded-xl flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center text-blue-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-white">{reports.filter(r => r.status === 'In Progress' || r.status === 'Pendiente').length}</p>
-                                <p className="text-xs text-slate-500 uppercase font-semibold">Reportes Actuales</p>
-                            </div>
-                        </div>
-                        <div className="bg-[#162a1d]/40 border border-[#1f3a28] p-4 rounded-xl flex items-center gap-4">
-                            <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center text-red-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-white">{reports.filter(r => r.category === 'Incendio' || r.category === 'Tala de árboles').length}</p>
-                                <p className="text-xs text-slate-500 uppercase font-semibold">Problemas de Alta Prioridad</p>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Right Sidebar - Location Preview */}
-            <div className="w-80 border-l border-[#1f3a28] bg-[#162a1d] hidden xl:flex flex-col">
+            {/* Right Sidebar - Location Preview (Hidden on smaller screens) */}
+            <div className="w-80 border-l border-[#1f3a28] bg-[#162a1d] hidden xl:flex flex-col flex-shrink-0">
                 <div className="p-6 border-b border-[#1f3a28]">
-                    <h3 className="font-bold text-sm uppercase tracking-wider text-white">Vista previa de la ubicación</h3>
+                    <h3 className="font-bold text-sm uppercase tracking-wider text-white">Información Detallada</h3>
                 </div>
                 <div className="p-4 flex-1 overflow-auto">
-                    <div className="h-64 rounded-xl bg-[#102216] relative overflow-hidden mb-6 group cursor-crosshair">
+                    <div className="h-64 rounded-xl bg-[#102216] relative overflow-hidden mb-6 group cursor-crosshair border border-[#1f3a28]">
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-8 h-8 bg-[#13ec5b] rounded-full flex items-center justify-center shadow-lg shadow-[#13ec5b]/40">
+                            <div className="w-8 h-8 bg-[#13ec5b] rounded-full flex items-center justify-center shadow-lg shadow-[#13ec5b]/40 animate-bounce">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-[#102216]">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                                 </svg>
                             </div>
                         </div>
-                        <div className="absolute bottom-3 left-3 bg-[#102216]/80 backdrop-blur-md px-2 py-1 rounded text-[10px] border border-white/10 text-white">
-                            {selectedReport ? selectedReport.coordinates : '◎ -- / --'}
+                        <div className="absolute bottom-3 left-3 bg-[#102216]/80 backdrop-blur-md px-2 py-1 rounded text-[10px] border border-white/10 text-white font-mono">
+                            {selectedReport ? `${selectedReport.coordinates[1].toFixed(4)}, ${selectedReport.coordinates[0].toFixed(4)}` : '◎ -- / --'}
                         </div>
                     </div>
                     <div className="space-y-4">
-                        <div className="bg-[#102216] p-4 rounded-xl border border-[#1f3a28]">
-                            <h4 className="text-xs font-bold text-[#13ec5b] uppercase mb-2">Información del reporte seleccionado</h4>
+                        <div className="bg-[#102216] p-5 rounded-xl border border-[#1f3a28] shadow-inner">
+                            <h4 className="text-xs font-bold text-[#13ec5b] uppercase mb-3 tracking-widest">Reporte Seleccionado</h4>
                             {selectedReport ? (
                                 <>
-                                    <p className="text-sm font-semibold mb-1 text-white">#{selectedReport.id} {selectedReport.title}</p>
-                                    <p className="text-xs text-slate-500 mb-4 leading-relaxed">{selectedReport.description}</p>
-                                    <div className="flex items-center justify-between pt-3 border-t border-[#1f3a28]">
-                                        <span className="text-[10px] text-slate-500">Reported by: {selectedReport.reporter}</span>
-                                        <button
-                                            onClick={() => onSelectReport(selectedReport)}
-                                            className="text-[#13ec5b] text-[10px] font-bold uppercase hover:underline"
-                                        >
-                                            Ver detalles completos
-                                        </button>
+                                    <div className="mb-4">
+                                        <p className="text-xs text-slate-500 mb-1 font-mono">ID: #{selectedReport.id}</p>
+                                        <p className="text-base font-bold text-white leading-tight">{selectedReport.title}</p>
                                     </div>
+                                    <p className="text-xs text-slate-400 mb-6 leading-relaxed italic">"{selectedReport.description}"</p>
+
+                                    <div className="space-y-3 pt-4 border-t border-[#1f3a28]">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] text-slate-500 uppercase font-bold">Informante</span>
+                                            <span className="text-xs text-white font-medium">{selectedReport.reporter}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] text-slate-500 uppercase font-bold">Fecha</span>
+                                            <span className="text-xs text-white font-medium">{selectedReport.submitted}</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => onSelectReport(selectedReport)}
+                                        className="w-full mt-6 py-3 bg-[#13ec5b]/10 text-[#13ec5b] border border-[#13ec5b]/20 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-[#13ec5b] hover:text-[#102216] transition-all"
+                                    >
+                                        Ver detalles completos
+                                    </button>
                                 </>
                             ) : (
-                                <p className="text-xs text-slate-500">Seleccione un reporte para ver detalles.</p>
+                                <div className="py-8 text-center">
+                                    <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-slate-600">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-xs text-slate-500 px-4">Seleccione un reporte de la lista para ver su ubicación y detalles rápidos.</p>
+                                </div>
                             )}
                         </div>
                     </div>
-                </div>
-                <div className="p-6">
-                    <button className="w-full bg-[#102216] text-slate-300 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#13ec5b] hover:text-[#102216] transition-colors flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                        </svg>
-                        Abrir mapa interactivo
-                    </button>
                 </div>
             </div>
 

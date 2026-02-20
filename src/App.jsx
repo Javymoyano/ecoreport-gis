@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './App.css';
 import GisMap from './components/GisMap';
@@ -10,17 +10,31 @@ function App() {
   const [currentView, setCurrentView] = useState('map');
   const [selectedReport, setSelectedReport] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [pendingReportCoords, setPendingReportCoords] = useState(null);
   const [mapTarget, setMapTarget] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setSidebarOpen(false);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleSelectReport = (report) => {
     setSelectedReport(report);
     setCurrentView('reportDetail');
+    setMobileSidebarOpen(false);
   };
 
   const handleStartReportFromMap = (lat, lng) => {
     setPendingReportCoords({ lat, lng });
-    // We don't necessarily need to change the view if we want it as an overlay
   };
 
   const handleCancelNewReport = () => {
@@ -30,12 +44,11 @@ function App() {
   const handleSubmitSuccess = (nextView = 'reports') => {
     setPendingReportCoords(null);
     setCurrentView(nextView);
-    // Para recargar el mapa si volvemos a él, podríamos disparar un evento global o usar un key
   };
 
   const handleNewReport = () => {
-    // If coming from the sidebar button, we default to center of map or something
     setPendingReportCoords({ lat: -31.675, lng: -64.442 });
+    setMobileSidebarOpen(false);
   };
 
   const handleBackToList = () => {
@@ -44,8 +57,13 @@ function App() {
   };
 
   const handleViewOnMap = (coords) => {
-    setMapTarget(coords); // [lng, lat]
+    setMapTarget(coords);
     setCurrentView('map');
+  };
+
+  const handleNavClick = (view) => {
+    setCurrentView(view);
+    setMobileSidebarOpen(false);
   };
 
   const navItems = [
@@ -88,75 +106,127 @@ function App() {
     return icons[iconName] || icons.dashboard;
   };
 
-  return (
-    <div className="h-screen w-full flex bg-[#102216]">
-      {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-[#162a1d] border-r border-[#1f3a28] transition-all duration-300 flex flex-col`}>
-        {/* Logo/Header */}
-        <div className="p-4 border-b border-[#1f3a28]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#13ec5b] flex items-center justify-center text-white text-xl font-bold shadow-lg">
-              🌲
+  // Sidebar content (shared between desktop and mobile)
+  const SidebarContent = () => (
+    <>
+      {/* Logo/Header */}
+      <div className="p-4 border-b border-[#1f3a28]">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-[#13ec5b] flex items-center justify-center text-white text-xl font-bold shadow-lg flex-shrink-0">
+            🌲
+          </div>
+          {(sidebarOpen || isMobile) && (
+            <div className="min-w-0">
+              <h1 className="font-bold text-lg text-white text-gradient bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 truncate">Reserva Natural</h1>
+              <p className="text-[#13ec5b] text-[10px] uppercase font-black tracking-[0.2em] opacity-80">Sistema de Gestión</p>
             </div>
-            {sidebarOpen && (
-              <div>
-                <h1 className="font-bold text-lg text-white text-gradient bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Reserva Natural</h1>
-                <p className="text-[#13ec5b] text-[10px] uppercase font-black tracking-[0.2em] opacity-80">Sistema de Gestión</p>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4">
+        <ul className="space-y-2">
+          {navItems.map((item) => (
+            <li key={item.id}>
+              <button
+                onClick={() => handleNavClick(item.view)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${currentView === item.view || (currentView.includes('report') && item.view === 'reports')
+                  ? 'bg-[#13ec5b]/20 text-[#13ec5b] font-semibold'
+                  : 'hover:bg-[#13ec5b]/10 text-slate-400 hover:text-white'
+                  }`}
+              >
+                {getIcon(item.icon)}
+                {(sidebarOpen || isMobile) && <span className="font-medium">{item.label}</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      {/* User Profile */}
+      {(sidebarOpen || isMobile) && (
+        <div className="p-4 border-t border-[#1f3a28]">
+          <div className="flex items-center gap-3">
+            <div className="avatar placeholder">
+              <div className="bg-[#13ec5b]/20 text-[#13ec5b] rounded-full w-10 font-semibold flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">JM</span>
               </div>
-            )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-white truncate">Javy Moyano</p>
+              <p className="text-xs text-gray-400">Administrador</p>
+            </div>
           </div>
         </div>
+      )}
+    </>
+  );
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-2">
-            {navItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => setCurrentView(item.view)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${currentView === item.view || (currentView.includes('report') && item.view === 'reports')
-                    ? 'bg-[#13ec5b]/20 text-[#13ec5b] font-semibold'
-                    : 'hover:bg-[#13ec5b]/10 text-slate-400 hover:text-white'
-                    }`}
-                >
-                  {getIcon(item.icon)}
-                  {sidebarOpen && <span className="font-medium">{item.label}</span>}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+  return (
+    <div className="h-screen w-full flex bg-[#102216]">
 
-        {/* User Profile */}
-        {sidebarOpen && (
-          <div className="p-4 border-t border-[#1f3a28]">
-            <div className="flex items-center gap-3">
-              <div className="avatar placeholder">
-                <div className="bg-[#13ec5b]/20 text-[#13ec5b] rounded-full w-10 font-semibold flex items-center justify-center">
-                  <span className="text-sm">JM</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-sm text-white">Javy Moyano</p>
-                <p className="text-xs text-gray-400">Administrador</p>
-              </div>
-            </div>
+      {/* Mobile Top Bar */}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#162a1d] border-b border-[#1f3a28] flex items-center justify-between px-4">
+          <button
+            onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+            className="p-2 hover:bg-[#13ec5b]/10 rounded-lg text-white transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🌲</span>
+            <span className="font-bold text-white text-sm">Reserva Natural</span>
           </div>
-        )}
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+      )}
 
-        {/* Toggle Button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-4 hover:bg-[#13ec5b]/10 transition-colors border-t border-[#1f3a28] text-gray-400 hover:text-white"
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileSidebarOpen(false)}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-6 h-6 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
-          </svg>
-        </button>
-      </aside>
+          <aside
+            className="w-72 h-full bg-[#162a1d] border-r border-[#1f3a28] flex flex-col animate-slide-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <SidebarContent />
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              className="p-4 hover:bg-[#13ec5b]/10 transition-colors border-t border-[#1f3a28] text-gray-400 hover:text-white flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+              <span className="text-sm">Cerrar menú</span>
+            </button>
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-[#162a1d] border-r border-[#1f3a28] transition-all duration-300 flex flex-col flex-shrink-0`}>
+          <SidebarContent />
+          {/* Toggle Button */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-4 hover:bg-[#13ec5b]/10 transition-colors border-t border-[#1f3a28] text-gray-400 hover:text-white"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-6 h-6 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5" />
+            </svg>
+          </button>
+        </aside>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden relative">
+      <main className={`flex-1 flex flex-col min-h-0 overflow-hidden relative ${isMobile ? 'pt-14' : ''}`}>
         {currentView === 'map' && (
           <GisMap
             onStartReport={handleStartReportFromMap}
@@ -189,26 +259,26 @@ function App() {
           />
         )}
         {currentView === 'dashboard' && (
-          <div className="h-full overflow-y-auto bg-[#102216] p-6">
+          <div className="h-full overflow-y-auto bg-[#102216] p-4 md:p-6">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Panel Principal</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <h2 className="text-2xl md:text-3xl font-bold text-[#13ec5b] mb-6">Panel Principal</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 <div className="card bg-[#162a1d] border border-[#1f3a28]">
                   <div className="card-body">
-                    <h3 className="text-4xl font-bold text-[#13ec5b]">142</h3>
-                    <p className="text-gray-400">Reportes Resueltos</p>
+                    <h3 className="text-3xl md:text-4xl font-bold text-[#13ec5b]">142</h3>
+                    <p className="text-gray-400 text-sm">Reportes Resueltos</p>
                   </div>
                 </div>
                 <div className="card bg-[#162a1d] border border-[#1f3a28]">
                   <div className="card-body">
-                    <h3 className="text-4xl font-bold text-yellow-400">28</h3>
-                    <p className="text-gray-400">Actualmente Activos</p>
+                    <h3 className="text-3xl md:text-4xl font-bold text-yellow-400">28</h3>
+                    <p className="text-gray-400 text-sm">Actualmente Activos</p>
                   </div>
                 </div>
                 <div className="card bg-[#162a1d] border border-[#1f3a28]">
                   <div className="card-body">
-                    <h3 className="text-4xl font-bold text-red-400">4</h3>
-                    <p className="text-gray-400">Prioridad Alta</p>
+                    <h3 className="text-3xl md:text-4xl font-bold text-red-400">4</h3>
+                    <p className="text-gray-400 text-sm">Prioridad Alta</p>
                   </div>
                 </div>
               </div>
@@ -216,17 +286,17 @@ function App() {
           </div>
         )}
         {currentView === 'analytics' && (
-          <div className="h-full overflow-y-auto bg-[#102216] p-6">
+          <div className="h-full overflow-y-auto bg-[#102216] p-4 md:p-6">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Estadísticas</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#13ec5b] mb-6">Estadísticas</h2>
               <p className="text-gray-400">El panel de estadísticas estará disponible pronto...</p>
             </div>
           </div>
         )}
         {currentView === 'settings' && (
-          <div className="h-full overflow-y-auto bg-[#102216] p-6">
+          <div className="h-full overflow-y-auto bg-[#102216] p-4 md:p-6">
             <div className="max-w-7xl mx-auto">
-              <h2 className="text-3xl font-bold text-[#13ec5b] mb-6">Configuración</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#13ec5b] mb-6">Configuración</h2>
               <p className="text-gray-400">El panel de configuración estará disponible pronto...</p>
             </div>
           </div>

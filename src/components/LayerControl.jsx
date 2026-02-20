@@ -6,47 +6,50 @@ const MAP_STYLES = {
   base: 'https://api.maptiler.com/maps/base-v4/style.json?key=wxRpMoRkMeIY1OWMwquv',
 };
 
-function LayerControl({ onStyleChange }) {
+function LayerControl({ onStyleChange, isMobile }) {
+  // On mobile (bottom controls), open UP. On desktop (top controls), open DOWN.
+  const dropdownDirection = isMobile ? "dropdown-top" : "dropdown-bottom";
+
   return (
-    <div className="dropdown dropdown-end">
+    <div className={`dropdown ${dropdownDirection} dropdown-end`}>
       <div
         tabIndex={0}
         role="button"
-        className="w-12 h-12 bg-[#1a2332] hover:bg-[#252d3d] border border-gray-700/50 rounded-lg flex items-center justify-center text-white transition-colors"
+        className="w-10 h-10 sm:w-12 sm:h-12 bg-[#162a1d]/90 backdrop-blur-md border border-[#1f3a28] rounded-xl flex items-center justify-center text-white hover:bg-[#13ec5b]/10 transition-all shadow-2xl"
+        title="Cambiar Capas"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-4.477a2.25 2.25 0 0 1 2.092 0L22.25 12l-8.954 4.477a2.25 2.25 0 0 1-2.092 0L2.25 12Z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954 4.477a2.25 2.25 0 0 0 2.092 0L22.25 12M2.25 15l8.954 4.477a2.25 2.25 0 0 0 2.092 0L22.25 15" />
-        </svg>
+        <span className="material-icons sm:text-2xl">layers</span>
       </div>
 
-      <ul tabIndex={0} className="dropdown-content menu bg-[#1a2332] border border-gray-700/50 rounded-lg z-[1] w-48 p-2 shadow-2xl mt-2">
-        <li className="menu-title text-[10px] opacity-50 uppercase font-bold text-[#13ec37] px-3 py-1">Mapa Base</li>
-        <li>
-          <button className="py-2 text-sm text-white hover:bg-[#252d3d]" onClick={() => onStyleChange(MAP_STYLES.hibrido)}>
-            🌳 Hibrido
-          </button>
+      <ul
+        tabIndex={0}
+        className="dropdown-content menu bg-[#162a1d]/95 backdrop-blur-xl border border-[#1f3a28] rounded-xl z-[50] w-56 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.5)] mb-3 mt-3 max-h-[70vh] flex-nowrap overflow-y-auto custom-scrollbar"
+      >
+        <li className="menu-title text-[10px] opacity-60 uppercase font-black tracking-[0.2em] text-[#13ec5b] px-4 py-2 sticky top-0 bg-[#162a1d]/95 backdrop-blur-sm z-10">
+          Capas del Mapa
         </li>
-        <li>
-          <button className="py-2 text-sm text-white hover:bg-[#252d3d]" onClick={() => onStyleChange(MAP_STYLES.topo)}>
-            ⛰️ Relieve
-          </button>
-        </li>
-        <li>
-          <button className="py-2 text-sm text-white hover:bg-[#252d3d]" onClick={() => onStyleChange(MAP_STYLES.calles)}>
-            🛣️ Calles
-          </button>
-        </li>
-        <li>
-          <button className="py-2 text-sm text-white hover:bg-[#252d3d]" onClick={() => onStyleChange(MAP_STYLES.satelite)}>
-            🛰️ Satélite
-          </button>
-        </li>
-        <li>
-          <button className="py-2 text-sm text-white hover:bg-[#252d3d]" onClick={() => onStyleChange(MAP_STYLES.base)}>
-            🏠 Base
-          </button>
-        </li>
+        <div className="space-y-1">
+          {Object.entries({
+            'Híbrido': { url: MAP_STYLES.hibrido, icon: 'map' },
+            'Relieve': { url: MAP_STYLES.topo, icon: 'terrain' },
+            'Calles': { url: MAP_STYLES.calles, icon: 'directions_car' },
+            'Satélite': { url: MAP_STYLES.satelite, icon: 'satellite_alt' },
+            'Básico': { url: MAP_STYLES.base, icon: 'public' }
+          }).map(([name, data]) => (
+            <li key={name}>
+              <button
+                className="flex items-center gap-3 py-3 px-4 text-sm text-slate-300 hover:text-white hover:bg-[#13ec5b]/10 rounded-lg transition-colors group"
+                onClick={() => {
+                  onStyleChange(data.url);
+                  document.activeElement?.blur();
+                }}
+              >
+                <span className="material-icons text-lg text-slate-500 group-hover:text-[#13ec5b] transition-colors">{data.icon}</span>
+                <span className="font-medium text-xs sm:text-sm">{name}</span>
+              </button>
+            </li>
+          ))}
+        </div>
       </ul>
     </div>
   );
