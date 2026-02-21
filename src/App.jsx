@@ -4,6 +4,7 @@ import './App.css';
 import GisMap from './components/GisMap';
 import ReportsList from './components/ReportsList';
 import NewReportForm from './components/NewReportForm';
+import NewInventoryForm from './components/NewInventoryForm';
 import ReportDetail from './components/ReportDetail';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [pendingReportCoords, setPendingReportCoords] = useState(null);
+  const [pendingInventoryCoords, setPendingInventoryCoords] = useState(null);
   const [mapTarget, setMapTarget] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -39,10 +41,12 @@ function App() {
 
   const handleCancelNewReport = () => {
     setPendingReportCoords(null);
+    setPendingInventoryCoords(null);
   };
 
   const handleSubmitSuccess = (nextView = 'reports') => {
     setPendingReportCoords(null);
+    setPendingInventoryCoords(null);
     setCurrentView(nextView);
   };
 
@@ -230,6 +234,7 @@ function App() {
         {currentView === 'map' && (
           <GisMap
             onStartReport={handleStartReportFromMap}
+            onStartInventory={(lat, lng) => setPendingInventoryCoords({ lat, lng })}
             targetCoords={mapTarget}
             onClearTarget={() => setMapTarget(null)}
           />
@@ -249,6 +254,15 @@ function App() {
             lng={pendingReportCoords.lng}
             onCancel={handleCancelNewReport}
             onSubmitSuccess={handleSubmitSuccess}
+          />
+        )}
+
+        {pendingInventoryCoords && (
+          <NewInventoryForm
+            lat={pendingInventoryCoords.lat}
+            lng={pendingInventoryCoords.lng}
+            onCancel={handleCancelNewReport}
+            onSubmitSuccess={() => handleSubmitSuccess('map')}
           />
         )}
 

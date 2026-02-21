@@ -205,15 +205,69 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
                             <p className="text-[10px] text-right text-slate-500 mt-1">{formData.description.length} / 500</p>
                         </div>
                         <div>
-                            <label className="block text-xs sm:text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">URL de Imagen (Opcional)</label>
-                            <input
-                                name="foto_url"
-                                value={formData.foto_url}
-                                onChange={handleChange}
-                                className="w-full bg-slate-50 dark:bg-[#102216]/50 border border-slate-200 dark:border-[#13ec5b]/20 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#13ec5b]/50 focus:border-[#13ec5b] outline-none transition-all placeholder:text-slate-500 text-white"
-                                placeholder="https://..."
-                                type="text"
-                            />
+                            <label className="block text-xs sm:text-sm font-medium mb-1.5 text-slate-700 dark:text-slate-300">Fotografía del Incidente</label>
+
+                            <div className="flex flex-col gap-3">
+                                {formData.foto_url && (
+                                    <div className="relative w-full h-48 rounded-xl overflow-hidden border border-[#13ec5b]/30">
+                                        <img src={formData.foto_url} alt="Vista previa" className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, foto_url: '' }))}
+                                            className="absolute top-2 right-2 bg-black/60 p-1.5 rounded-full text-white hover:bg-red-500 transition-colors"
+                                        >
+                                            <span className="material-icons text-sm">delete</span>
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2">
+                                    <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-[#13ec5b]/20 hover:border-[#13ec5b]/50 hover:bg-[#13ec5b]/5 rounded-xl p-4 transition-all cursor-pointer group">
+                                        <span className="material-icons text-[#13ec5b]/50 group-hover:text-[#13ec5b] mb-1">add_a_photo</span>
+                                        <span className="text-[10px] uppercase font-bold text-slate-500 group-hover:text-[#13ec5b]">Cargar Imagen</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            capture="environment"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files[0];
+                                                if (!file) return;
+
+                                                const uploadData = new FormData();
+                                                uploadData.append('file', file);
+
+                                                try {
+                                                    const apiBase = `http://${window.location.hostname}:8001`;
+                                                    const response = await fetch(`${apiBase}/upload`, {
+                                                        method: 'POST',
+                                                        body: uploadData
+                                                    });
+                                                    const result = await response.json();
+                                                    if (result.url) {
+                                                        setFormData(prev => ({ ...prev, foto_url: result.url }));
+                                                    }
+                                                } catch (err) {
+                                                    console.error("Error al subir:", err);
+                                                    alert("Error al subir la imagen.");
+                                                }
+                                            }}
+                                        />
+                                    </label>
+
+                                    <div className="flex-1">
+                                        <label className="block text-[9px] uppercase font-bold text-slate-500 mb-1 ml-1 opacity-60">O vía URL</label>
+                                        <input
+                                            name="foto_url"
+                                            value={formData.foto_url}
+                                            onChange={handleChange}
+                                            className="w-full bg-[#102216]/50 border border-[#13ec5b]/20 rounded-lg p-3 text-xs focus:border-[#13ec5b] outline-none transition-all placeholder:text-slate-500 text-white"
+                                            placeholder="https://..."
+                                            type="text"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>

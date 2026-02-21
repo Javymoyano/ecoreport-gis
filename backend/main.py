@@ -1,11 +1,21 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile
+from fastapi.staticfiles import StaticFiles
+import os
+import uuid
+import shutil
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional, List, Dict, Any
 from database import supabase
-from models import ReportCreate, ReportUpdate
+from models import ReportCreate, ReportUpdate, EspecieBase, RegistroBiologicoCreate
 import json
 import time
 
 app = FastAPI()
+
+# 0. Setup Storage
+UPLOAD_DIR = "public/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # 1. CORS Middleware
 app.add_middleware(
@@ -84,3 +94,60 @@ def delete_reporte(report_id: str):
 def get_reporte(report_id: str):
     response = supabase.table("reportes").select("*").eq("id", report_id).execute()
     return response.data
+
+# --- Rutas de Inventario Biológico ---
+
+@app.get("/especies")
+def get_especies(tipo: Optional[str] = None):
+    query = supabase.table("catalogo_especies").select("*")
+    if tipo:
+        query = query.eq("tipo", tipo)
+    response = query.execute()
+    return response.data
+
+@app.post("/especies")
+def create_especie(especie: EspecieBase):
+    try:
+        data = json.loads(especie.json())
+        response = supabase.table("catalogo_especies").insert(data).execute()
+        return response.data
+    except Exception as e:
+        return {"error": str(e)}, 500
+
+@app.get("/registros-biologicos")
+def get_registros(tipo: Optional[str] = None):
+    # Traemos el registro junto con el nombre de la especie
+    query = supabase.table("registros_biologicos").select("*, catalogo_especies(nombre_comun, tipo)")
+    response = query.execute()
+    
+    # Si se pide un tipo específico, filtramos en Python o podríamos usar rpc/filtros complejos
+    if tipo:
+        return [r for r in response.data if r.get('catalogo_especies', {}).get('tipo') == tipo]
+    
+    return response.data
+
+@app.post("/registros-biologicos")
+def create_registro(registro: RegistroBiologicoCreate):
+    try:
+        data = json.loads(registro.json())
+        response = supabase.table("registros_biologicos").insert(data).execute()
+        return response.data
+    except Exception as e:
+        return {"error": str(e)}, 500
+@app.post("/upload")
+async def upload_file(request: Request, file: UploadFile = File(...)):
+    try:
+        file_extension = os.path.splitext(file.filename)[1]
+        new_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = os.path.join(UPLOAD_DIR, new_filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # Generar URL basada en el host del request
+        host = request.url.hostname
+        port = request.url.port
+        file_url = f"http://{host}:{port}/uploads/{new_filename}"
+        return {"url": file_url}
+    except Exception as e:
+        return {"error": str(e)}, 500

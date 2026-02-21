@@ -64,6 +64,22 @@ def populate():
         }
     ]
 
+    # 2. Populate Species Catalog
+    especies = [
+        {"nombre_comun": "Algorrobo Blanco", "nombre_cientifico": "Prosopis alba", "tipo": "flora", "descripcion": "Árbol nativo emblemático."},
+        {"nombre_comun": "Zorro Gris", "nombre_cientifico": "Lycalopex gymnocercus", "tipo": "fauna", "descripcion": "Cánido nativo de la región."},
+        {"nombre_comun": "Quebracho Blanco", "nombre_cientifico": "Aspidosperma quebracho-blanco", "tipo": "flora", "descripcion": "Árbol de madera dura."},
+        {"nombre_comun": "Cóndor Andino", "nombre_cientifico": "Vultur gryphus", "tipo": "fauna", "descripcion": "Ave rapaz de gran envergadura."},
+        {"nombre_comun": "Peperina", "nombre_cientifico": "Minthostachys verticillata", "tipo": "flora", "descripcion": "Planta aromática serrana."}
+    ]
+    
+    for esp in especies:
+        try:
+            supabase.table("catalogo_especies").insert(esp).execute()
+            print(f"Success: Inserted species '{esp['nombre_comun']}'")
+        except Exception as e:
+            print(f"Error inserting species: {e}")
+
     for item in data:
         if not item.get("categoria_id"):
             print(f"Skipping '{item['titulo']}' because category ID is missing.")

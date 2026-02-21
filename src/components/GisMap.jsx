@@ -3,14 +3,28 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import LayerControl from './LayerControl';
 
-function GisMap({ onStartReport, targetCoords, onClearTarget }) {
+function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }) {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const markersRef = useRef([]);
   const [coordinates, setCoordinates] = useState({ lat: -31.675, lng: -64.442 });
   const [selectedReport, setSelectedReport] = useState(null);
   const [reports, setReports] = useState([]);
+  const [biologicRecords, setBiologicRecords] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const biologicMarkersRef = useRef([]);
+  const [overlays, setOverlays] = useState({
+    reports: { id: 'reports', name: 'Reportes Globales', visible: true, icon: 'campaign' },
+    flora: { id: 'flora', name: 'Flora (Protectores)', visible: true, icon: 'park' },
+    fauna: { id: 'fauna', name: 'Fauna (Avistajes)', visible: true, icon: 'pets' },
+  });
+
+  const handleOverlayToggle = (id) => {
+    setOverlays(prev => ({
+      ...prev,
+      [id]: { ...prev[id], visible: !prev[id].visible }
+    }));
+  };
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -29,8 +43,20 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
     }
   };
 
+  const fetchBiologicRecords = async () => {
+    const apiBase = `http://${window.location.hostname}:8001`;
+    try {
+      const response = await fetch(`${apiBase}/registros-biologicos`);
+      const data = await response.json();
+      setBiologicRecords(data);
+    } catch (error) {
+      console.error('Error al cargar registros biológicos:', error);
+    }
+  };
+
   useEffect(() => {
     fetchReports();
+    fetchBiologicRecords();
   }, []);
 
   useEffect(() => {
@@ -71,16 +97,23 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
         popupNode.className = 'p-0 overflow-hidden rounded-xl bg-[#102216] border border-[#13ec5b]/30 shadow-[0_0_20px_rgba(19,236,91,0.2)] text-white min-w-[200px] animate-in fade-in zoom-in duration-200';
         popupNode.innerHTML = `
           <div class="px-4 py-3 border-b border-[#13ec5b]/10 bg-white/5">
-            <p class="text-[10px] uppercase tracking-[0.2em] text-[#13ec5b] font-bold mb-1 opacity-80">Nuevo Reporte</p>
-            <p class="text-sm font-semibold text-white/90">¿Iniciar reporte aquí?</p>
+            <p class="text-[10px] uppercase tracking-[0.2em] text-[#13ec5b] font-bold mb-1 opacity-80">Nuevo Registro</p>
+            <p class="text-sm font-semibold text-white/90">¿Qué deseas registrar aquí?</p>
           </div>
           <div class="px-4 py-2 bg-[#081C15]/50 flex items-center gap-1 text-[10px] text-white/40 font-mono italic border-b border-[#13ec5b]/5">
             <span class="material-icons text-[12px]">location_on</span>
             ${lat.toFixed(4)}, ${lng.toFixed(4)}
           </div>
-          <div class="p-3 flex gap-2 bg-[#102216]">
-            <button id="btn-cancel-report" class="flex-1 px-3 py-2 text-[11px] font-bold uppercase tracking-wider bg-white/5 hover:bg-white/10 text-white/60 rounded-lg transition-all border border-white/5">Cancelar</button>
-            <button id="btn-start-report" class="flex-1 px-3 py-2 text-[11px] font-bold uppercase tracking-wider bg-[#13ec5b] hover:bg-[#13ec5b]/80 text-[#081C15] rounded-lg transition-all shadow-[0_4px_12px_rgba(19,236,91,0.3)]">Confirmar</button>
+          <div class="p-3 flex flex-col gap-2 bg-[#102216]">
+            <button id="btn-start-report" class="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold uppercase tracking-wider bg-white/5 hover:bg-[#13ec5b]/20 text-white rounded-lg transition-all border border-white/5 group">
+              <span>Reporte Incidente</span>
+              <span class="material-icons text-xs">campaign</span>
+            </button>
+            <button id="btn-start-inventory" class="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold uppercase tracking-wider bg-[#13ec5b] hover:bg-[#13ec5b]/80 text-[#081C15] rounded-lg transition-all shadow-[0_4px_12px_rgba(19,236,91,0.3)]">
+              <span>Flora / Fauna</span>
+              <span class="material-icons text-xs">biotech</span>
+            </button>
+            <button id="btn-cancel-report" class="w-full py-1.5 text-[9px] font-bold uppercase tracking-tighter text-white/40 hover:text-white/60 transition-colors">Cerrar</button>
           </div>
         `;
 
@@ -98,6 +131,10 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
         popupNode.querySelector('#btn-start-report').onclick = () => {
           popup.remove();
           if (onStartReport) onStartReport(lat, lng);
+        };
+        popupNode.querySelector('#btn-start-inventory').onclick = () => {
+          popup.remove();
+          if (onStartInventory) onStartInventory(lat, lng);
         };
         popupNode.querySelector('#btn-cancel-report').onclick = () => {
           popup.remove();
@@ -132,49 +169,95 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
   }, [targetCoords]);
 
   useEffect(() => {
-    if (!map.current || reports.length === 0) return;
+    if (!map.current) return;
 
+    // Limpiar todos los marcadores existentes
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
+    biologicMarkersRef.current.forEach(m => m.remove());
+    biologicMarkersRef.current = [];
 
-    reports.forEach((report) => {
-      const lngLat = report.geom.coordinates;
+    // --- Renderizar Reportes ---
+    if (overlays.reports.visible && reports.length > 0) {
+      reports.forEach((report) => {
+        const lngLat = report.geom.coordinates;
+        const el = document.createElement('div');
+        el.className = 'custom-marker-report';
+
+        const statusName = report.estados?.nombre || 'pendiente';
+        const markerColor = statusName === 'Pendiente' ? '#f59e0b' :
+          statusName === 'En Proceso' ? '#3b82f6' : '#13ec5b';
+
+        el.style.cssText = `
+          width: ${isMobile ? '28px' : '36px'};
+          height: ${isMobile ? '28px' : '36px'};
+          background-color: ${markerColor};
+          border: 2px solid white;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          transition: transform 0.2s;
+        `;
+
+        el.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" style="width: ${isMobile ? '14px' : '18px'}; height: ${isMobile ? '14px' : '18px'};">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+        `;
+
+        el.addEventListener('click', () => setSelectedReport(report));
+        const marker = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(map.current);
+        markersRef.current.push(marker);
+      });
+    }
+
+    // --- Renderizar Registros Biológicos (Flora/Fauna) ---
+    biologicRecords.forEach((record) => {
+      const type = record.catalogo_especies?.tipo; // 'flora' o 'fauna'
+      if (!overlays[type]?.visible) return;
+
+      const lngLat = record.geom.coordinates;
       const el = document.createElement('div');
-      el.className = 'custom-marker';
+      el.className = `custom-marker-${type}`;
 
-      const statusName = report.estados?.nombre || 'pendiente';
-      const markerColor = statusName === 'Pendiente' ? '#f59e0b' :
-        statusName === 'En Proceso' ? '#3b82f6' : '#13ec5b';
+      const markerColor = type === 'flora' ? '#22c55e' : '#a855f7'; // Verde para flora, Púrpura para fauna
+      const icon = type === 'flora' ? 'park' : 'pets';
 
       el.style.cssText = `
-        width: ${isMobile ? '28px' : '36px'};
-        height: ${isMobile ? '28px' : '36px'};
+        width: ${isMobile ? '24px' : '30px'};
+        height: ${isMobile ? '24px' : '30px'};
         background-color: ${markerColor};
         border: 2px solid white;
-        border-radius: 50%;
+        border-radius: 8px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        transition: transform 0.2s;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        transition: all 0.2s;
       `;
 
-      el.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 24 24" style="width: ${isMobile ? '14px' : '18px'}; height: ${isMobile ? '14px' : '18px'};">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-        </svg>
-      `;
+      el.innerHTML = `<span class="material-icons text-white" style="font-size: ${isMobile ? '16px' : '20px'}">${icon}</span>`;
 
-      el.addEventListener('click', () => setSelectedReport(report));
+      el.addEventListener('click', () => {
+        const speciesName = record.catalogo_especies?.nombre_comun || "Registro de Exploración";
+        setSelectedReport({
+          id: record.id,
+          titulo: speciesName,
+          description: record.observaciones || 'Sin observaciones adicionales.',
+          foto_url: record.foto_url,
+          categorias: { nombre: type.toUpperCase() }
+        });
+      });
 
-      const marker = new maplibregl.Marker({ element: el })
-        .setLngLat(lngLat)
-        .addTo(map.current);
-
-      markersRef.current.push(marker);
+      const marker = new maplibregl.Marker({ element: el }).setLngLat(lngLat).addTo(map.current);
+      biologicMarkersRef.current.push(marker);
     });
-  }, [reports, isMobile]);
+
+  }, [reports, biologicRecords, isMobile, overlays]);
 
   const handleZoomIn = () => map.current?.zoomIn();
   const handleZoomOut = () => map.current?.zoomOut();
@@ -195,8 +278,8 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
             <span className="material-symbols-outlined text-base sm:text-lg">explore</span>
           </div>
           <div>
-            <h1 className="text-[10px] sm:text-sm font-bold text-white uppercase tracking-widest leading-none">Explorador</h1>
-            <p className="text-[7px] sm:text-[9px] text-[#13ec5b]/60 uppercase font-bold tracking-widest mt-0.5">Mapa GIS</p>
+            <h1 className="text-[10px] sm:text-sm font-bold text-white uppercase tracking-widest leading-none">Explorador de Mapa</h1>
+            <p className="text-[7px] sm:text-[9px] text-[#13ec5b]/60 uppercase font-bold tracking-widest mt-0.5">Monitoreo Ambiental de la Reserva Natural El Amanecer</p>
           </div>
         </div>
         <button
@@ -236,7 +319,12 @@ function GisMap({ onStartReport, targetCoords, onClearTarget }) {
           <span className="material-icons sm:text-2xl">my_location</span>
         </button>
 
-        <LayerControl onStyleChange={handleStyleChange} isMobile={isMobile} />
+        <LayerControl
+          onStyleChange={handleStyleChange}
+          onOverlayToggle={handleOverlayToggle}
+          overlays={overlays}
+          isMobile={isMobile}
+        />
       </div>
 
       {/* Footer Status */}
