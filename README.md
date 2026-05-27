@@ -5,7 +5,20 @@
 ![Supabase](https://img.shields.io/badge/Database-Supabase%20%7C%20PostGIS-3ecf8e?style=for-the-badge&logo=supabase)
 ![MapLibre](https://img.shields.io/badge/Maps-MapLibre%20GL-blue?style=for-the-badge&logo=maplibre)
 
-**EcoReport-GIS** es una solución profesional geofrenciada para el monitoreo de recursos naturales. Diseñada bajo una estética premium de alto contraste, permite la detección temprana de incidentes, la gestión de reportes multimedia y el análisis estadístico de la salud de la reserva.
+## 🎉 Demo en Vivo
+
+▶️ **Prueba la aplicación en tiempo real:** https://ecoreport-gis.vercel.app
+
+[![Demo Home](./screenshots/demo_home.png)](https://ecoreport-gis.vercel.app)
+
+Una experiencia interactiva que permite a los usuarios:
+- Visualizar reportes georreferenciados en tiempo real.
+- Crear nuevos incidentes usando el GPS del móvil.
+- Analizar estadísticas de salud del ecosistema.
+
+---
+
+**EcoReport-GIS** es una solución profesional georreferenciada para el monitoreo de recursos naturales. Diseñada bajo una estética premium de alto contraste, permite la detección temprana de incidentes, la gestión de reportes multimedia y el análisis estadístico de la salud de la reserva.
 
 ---
 
@@ -14,7 +27,7 @@
 | 🛰️ Explorador de Mapa | 📊 Historial de Reportes |
 | :---: | :---: |
 | ![Explorador](./screenshots/dashboard_main.png) | ![Historial](./screenshots/reports_history.png) |
-| *Visualización geofrenciada con capas satelitales.* | *Gestión centralizada con filtros avanzados.* |
+| *Visualización georreferenciada con capas satelitales.* | *Gestión centralizada con filtros avanzados.* |
 
 | 📝 Detalle de Incidente | 📍 Interacción en Mapa | ➕ Formulario de Ingreso |
 | :---: | :---: | :---: |
