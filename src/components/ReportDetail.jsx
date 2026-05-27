@@ -26,7 +26,7 @@ function ReportDetail({ report, onBack }) {
     }, [report, isEditing]);
 
     useEffect(() => {
-        const apiBase = `http://${window.location.hostname}:8001`;
+        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
 
         const fetchCategories = async () => {
             try {
@@ -65,7 +65,7 @@ function ReportDetail({ report, onBack }) {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const apiBase = `http://${window.location.hostname}:8001`;
+            const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
             const payload = {
                 titulo: formData.titulo,
                 description: formData.description,

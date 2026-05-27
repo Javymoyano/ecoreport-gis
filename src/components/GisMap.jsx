@@ -33,7 +33,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
   }, []);
 
   const fetchReports = async () => {
-    const apiBase = `http://${window.location.hostname}:8001`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
     try {
       const response = await fetch(`${apiBase}/reportes`);
       const data = await response.json();
@@ -44,7 +44,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
   };
 
   const fetchBiologicRecords = async () => {
-    const apiBase = `http://${window.location.hostname}:8001`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
     try {
       const response = await fetch(`${apiBase}/registros-biologicos`);
       const data = await response.json();

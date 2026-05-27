@@ -28,7 +28,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
 
     const fetchStatuses = async () => {
         try {
-            const apiBase = `http://${window.location.hostname}:8001`;
+            const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
             const response = await fetch(`${apiBase}/estados`);
             if (response.ok) {
                 const data = await response.json();
@@ -41,7 +41,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
 
     const fetchCategories = async () => {
         try {
-            const apiBase = `http://${window.location.hostname}:8001`;
+            const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
             const response = await fetch(`${apiBase}/categorias`);
             if (response.ok) {
                 const data = await response.json();
@@ -55,7 +55,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
     const fetchReports = async () => {
         try {
             setLoading(true);
-            const apiBase = `http://${window.location.hostname}:8001`;
+            const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
             const response = await fetch(`${apiBase}/reportes`);
             if (!response.ok) throw new Error('Failed to fetch reports');
             const data = await response.json();
@@ -124,7 +124,7 @@ function ReportsList({ onSelectReport, onNewReport, onViewOnMap }) {
         setIsDeleting(true);
 
         try {
-            const apiBase = `http://${window.location.hostname}:8001`;
+            const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
             const response = await fetch(`${apiBase}/reportes/${deleteModal.report.fullId}`, {
                 method: 'DELETE',
             });

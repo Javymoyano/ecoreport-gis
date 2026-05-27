@@ -19,7 +19,7 @@ function NewInventoryForm({ lat, lng, onCancel, onSubmitSuccess }) {
     });
 
     useEffect(() => {
-        const apiBase = `http://${window.location.hostname}:8001`;
+        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
         const fetchSpecies = async () => {
             setIsLoadingSpecies(true);
             try {
@@ -52,7 +52,7 @@ function NewInventoryForm({ lat, lng, onCancel, onSubmitSuccess }) {
         }
 
         setIsSubmitting(true);
-        const apiBase = `http://${window.location.hostname}:8001`;
+        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
 
         try {
             let finalEspecieId = formData.especie_id;
@@ -285,7 +285,7 @@ function NewInventoryForm({ lat, lng, onCancel, onSubmitSuccess }) {
                                             uploadData.append('file', file);
 
                                             try {
-                                                const apiBase = `http://${window.location.hostname}:8001`;
+                                                const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
                                                 const response = await fetch(`${apiBase}/upload`, {
                                                     method: 'POST',
                                                     body: uploadData

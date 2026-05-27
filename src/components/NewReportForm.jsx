@@ -18,7 +18,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
     const USER_ID = "d794da38-a394-4036-8495-cbaf3d594c97"; // Default for now
 
     useEffect(() => {
-        const apiBase = `http://${window.location.hostname}:8001`;
+        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
 
         const fetchCategories = async () => {
             try {
@@ -77,7 +77,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
             foto_url: formData.foto_url || `https://placehold.co/600x400?text=${formData.titulo}`
         };
 
-        const apiBase = `http://${window.location.hostname}:8001`;
+        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
 
         try {
             const response = await fetch(`${apiBase}/reportes`, {
@@ -238,7 +238,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
                                                 uploadData.append('file', file);
 
                                                 try {
-                                                    const apiBase = `http://${window.location.hostname}:8001`;
+                                                    const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
                                                     const response = await fetch(`${apiBase}/upload`, {
                                                         method: 'POST',
                                                         body: uploadData
