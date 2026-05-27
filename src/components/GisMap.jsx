@@ -13,6 +13,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
   const [biologicRecords, setBiologicRecords] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const biologicMarkersRef = useRef([]);
+  const selectionMarkerRef = useRef(null);
   const [overlays, setOverlays] = useState({
     reports: { id: 'reports', name: 'Reportes Globales', visible: true, icon: 'campaign' },
     flora: { id: 'flora', name: 'Flora (Protectores)', visible: true, icon: 'park' },
@@ -81,6 +82,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
 
       // Long press simulation for mobile
       let touchTimeout;
+
       map.current.on('touchstart', (e) => {
         if (e.points.length === 1) {
           touchTimeout = setTimeout(() => {
@@ -93,6 +95,39 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
 
       const handleMapInteraction = (lngLat) => {
         const { lng, lat } = lngLat;
+
+        // Si ya hay un marcador de selección activo, lo removemos antes de crear el nuevo
+        if (selectionMarkerRef.current) {
+          selectionMarkerRef.current.remove();
+        }
+
+        // Crear elemento de marcador temporal con estilo y animación pulidos (verde brillante con aura de onda)
+        const markerEl = document.createElement('div');
+        markerEl.style.cssText = `
+          width: 20px;
+          height: 20px;
+          background-color: #ef4444;
+          border: 3px solid white;
+          border-radius: 50%;
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+          animation: pulse-selection-marker 1.8s infinite;
+          cursor: pointer;
+        `;
+
+        // Agregar animación de pulsación si no existe
+        if (!document.getElementById('pulse-selection-style')) {
+          const style = document.createElement('style');
+          style.id = 'pulse-selection-style';
+          style.innerHTML = `
+            @keyframes pulse-selection-marker {
+              0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8); }
+              70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+
         const popupNode = document.createElement('div');
         popupNode.className = 'p-0 overflow-hidden rounded-xl bg-[#102216] border border-[#13ec5b]/30 shadow-[0_0_20px_rgba(19,236,91,0.2)] text-white min-w-[200px] animate-in fade-in zoom-in duration-200';
         popupNode.innerHTML = `
@@ -125,20 +160,50 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
           offset: [0, -10]
         })
           .setLngLat([lng, lat])
-          .setDOMContent(popupNode)
+          .setDOMContent(popupNode);
+
+        // Crear el marcador en esa ubicación
+        const newMarker = new maplibregl.Marker({ element: markerEl })
+          .setLngLat([lng, lat])
+          .setPopup(popup)
           .addTo(map.current);
+
+        selectionMarkerRef.current = newMarker;
+
+        // Abrimos el popup del marcador automáticamente asociándolo al mapa
+        popup.addTo(map.current);
 
         popupNode.querySelector('#btn-start-report').onclick = () => {
           popup.remove();
+          if (selectionMarkerRef.current) {
+            selectionMarkerRef.current.remove();
+            selectionMarkerRef.current = null;
+          }
           if (onStartReport) onStartReport(lat, lng);
         };
         popupNode.querySelector('#btn-start-inventory').onclick = () => {
           popup.remove();
+          if (selectionMarkerRef.current) {
+            selectionMarkerRef.current.remove();
+            selectionMarkerRef.current = null;
+          }
           if (onStartInventory) onStartInventory(lat, lng);
         };
         popupNode.querySelector('#btn-cancel-report').onclick = () => {
           popup.remove();
+          if (selectionMarkerRef.current) {
+            selectionMarkerRef.current.remove();
+            selectionMarkerRef.current = null;
+          }
         };
+
+        // Si se cierra el popup haciendo click en otro lado, también borramos el marcador de selección
+        popup.on('close', () => {
+          if (selectionMarkerRef.current) {
+            selectionMarkerRef.current.remove();
+            selectionMarkerRef.current = null;
+          }
+        });
       };
 
       map.current.on('contextmenu', (e) => handleMapInteraction(e.lngLat));
@@ -261,11 +326,132 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
 
   const handleZoomIn = () => map.current?.zoomIn();
   const handleZoomOut = () => map.current?.zoomOut();
+  const [isLocating, setIsLocating] = useState(false);
+  const userLocationMarkerRef = useRef(null);
+
+  const [userCoords, setUserCoords] = useState(null);
+
   const handleRecenter = () => {
-    map.current?.flyTo({
-      center: [-64.4420, -31.6749],
-      zoom: 12
-    });
+    if (!navigator.geolocation) {
+      alert("La geolocalización no es soportada por este navegador.");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setIsLocating(false);
+        setUserCoords({ lat: latitude, lng: longitude });
+
+        if (map.current) {
+          map.current.flyTo({
+            center: [longitude, latitude],
+            zoom: 18, // Zoom muy alto para separar visualmente
+            essential: true
+          });
+
+          // Eliminar el marcador de usuario anterior si existe
+          if (userLocationMarkerRef.current) {
+            userLocationMarkerRef.current.remove();
+          }
+
+          // Crear un marcador personalizado para la posición actual del usuario
+          const el = document.createElement('div');
+          el.className = 'user-location-marker';
+          el.style.cssText = `
+            width: 22px;
+            height: 22px;
+            background-color: #3b82f6;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+            animation: pulse-marker 1.8s infinite;
+          `;
+
+          // Agregar animación CSS al documento si no existe
+          if (!document.getElementById('pulse-marker-style')) {
+            const style = document.createElement('style');
+            style.id = 'pulse-marker-style';
+            style.innerHTML = `
+              @keyframes pulse-marker {
+                0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8); }
+                70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+              }
+            `;
+            document.head.appendChild(style);
+          }
+
+          const markerNode = document.createElement('div');
+          markerNode.className = 'p-0 overflow-hidden rounded-xl bg-[#102216] border border-[#13ec5b]/30 shadow-lg text-white min-w-[200px]';
+          markerNode.innerHTML = `
+            <div class="px-3 py-2 border-b border-[#13ec5b]/10 bg-white/5 text-center">
+              <p class="text-[9px] uppercase tracking-wider text-[#13ec5b] font-bold">Estás Aquí</p>
+              <p class="text-xs font-semibold text-white/90">Ubicación GPS Confirmada</p>
+            </div>
+            <div class="p-3 flex flex-col gap-2 bg-[#102216]">
+              <button id="btn-user-report" class="w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-wider bg-white/5 hover:bg-[#13ec5b]/20 text-white rounded-lg transition-all border border-white/5 group">
+                <span>Reportar Incidente</span>
+                <span class="material-icons text-xs">campaign</span>
+              </button>
+              <button id="btn-user-inventory" class="w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-wider bg-[#13ec5b] hover:bg-[#13ec5b]/80 text-[#081C15] rounded-lg transition-all">
+                <span>Flora / Fauna</span>
+                <span class="material-icons text-xs">biotech</span>
+              </button>
+            </div>
+          `;
+
+          const popup = new maplibregl.Popup({
+            closeButton: false,
+            offset: [0, -10]
+          })
+            .setDOMContent(markerNode);
+
+          const newMarker = new maplibregl.Marker({ element: el })
+            .setLngLat([longitude, latitude])
+            .setPopup(popup)
+            .addTo(map.current);
+
+          userLocationMarkerRef.current = newMarker;
+
+          // Abrir popup inmediatamente al geolocalizar
+          popup.addTo(map.current);
+
+          // Evento de los botones dentro del popup del marcador de usuario
+          setTimeout(() => {
+            const btnReport = document.getElementById('btn-user-report');
+            if (btnReport) {
+              btnReport.onclick = () => {
+                popup.remove();
+                if (onStartReport) onStartReport(latitude, longitude);
+              };
+            }
+            const btnInventory = document.getElementById('btn-user-inventory');
+            if (btnInventory) {
+              btnInventory.onclick = () => {
+                popup.remove();
+                if (onStartInventory) onStartInventory(latitude, longitude);
+              };
+            }
+          }, 150);
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        console.error("Error obteniendo ubicación:", error);
+        let errorMsg = "Error al obtener la ubicación.";
+        if (error.code === 1) errorMsg = "Permiso de ubicación denegado. Por favor, actívalo en tu navegador/celular.";
+        else if (error.code === 2) errorMsg = "La señal GPS no está disponible temporalmente.";
+        else if (error.code === 3) errorMsg = "Tiempo de espera agotado al obtener el GPS.";
+        alert(errorMsg);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
   };
   const handleStyleChange = (newStyleUrl) => map.current?.setStyle(newStyleUrl);
 
@@ -283,7 +469,11 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
           </div>
         </div>
         <button
-          onClick={() => onStartReport(-31.675, -64.442)}
+          onClick={() => {
+            const lat = userCoords ? userCoords.lat : -31.675;
+            const lng = userCoords ? userCoords.lng : -64.442;
+            onStartReport(lat, lng);
+          }}
           className="bg-[#13ec5b] hover:bg-[#13ec5b]/80 text-[#081C15] text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all shadow-lg"
         >
           {isMobile ? '+' : 'Nuevo Reporte'}
@@ -313,10 +503,15 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
 
         <button
           onClick={handleRecenter}
-          className="w-10 h-10 sm:w-12 sm:h-12 bg-[#13ec5b] text-[#102216] rounded-xl flex items-center justify-center shadow-lg shadow-[#13ec5b]/20 hover:brightness-110 active:scale-95 transition-all"
+          disabled={isLocating}
+          className="w-10 h-10 sm:w-12 sm:h-12 bg-[#13ec5b] text-[#102216] rounded-xl flex items-center justify-center shadow-lg shadow-[#13ec5b]/20 hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           title="Mi ubicación"
         >
-          <span className="material-icons sm:text-2xl">my_location</span>
+          {isLocating ? (
+            <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-[#102216] border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <span className="material-icons sm:text-2xl">my_location</span>
+          )}
         </button>
 
         <LayerControl
