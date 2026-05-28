@@ -465,7 +465,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
           </div>
           <div>
             <h1 className="text-[10px] sm:text-sm font-bold text-white uppercase tracking-widest leading-none">Explorador de Mapa</h1>
-            <p className="text-[7px] sm:text-[9px] text-[#13ec5b]/60 uppercase font-bold tracking-widest mt-0.5">Monitoreo Ambiental de la Reserva Natural El Amanecer</p>
+            <p className="text-[7px] sm:text-[9px] text-[#13ec5b]/60 uppercase font-bold tracking-widest mt-0.5">Monitoreo Ambiental de la <span className="text-[#13ec5b]">Reserva Natural El Amanecer</span></p>
           </div>
         </div>
         <button

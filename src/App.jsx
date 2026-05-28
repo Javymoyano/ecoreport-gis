@@ -116,8 +116,8 @@ function App() {
       {/* Logo/Header */}
       <div className="p-4 border-b border-[#1f3a28]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#13ec5b] flex items-center justify-center text-white text-xl font-bold shadow-lg flex-shrink-0">
-            🌲
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xl font-bold shadow-lg flex-shrink-0">
+            <img src="/Logo.svg" alt="EcoReport-GIS Logo" />
           </div>
           {(sidebarOpen || isMobile) && (
             <div className="min-w-0">
