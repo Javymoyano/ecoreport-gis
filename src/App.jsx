@@ -118,7 +118,11 @@ function App() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xl font-bold shadow-lg flex-shrink-0">
             <img src="/Logo.svg" alt="EcoReport-GIS Logo" />
+
+
+
           </div>
+
           {(sidebarOpen || isMobile) && (
             <div className="min-w-0">
               <h1 className="font-bold text-lg text-white text-gradient bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 truncate">Reserva Natural</h1>
@@ -182,7 +186,7 @@ function App() {
             </svg>
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-lg">🌲</span>
+            <span className="flex items-center"><img src="/Logo.svg" alt="EcoReport-GIS Logo" className="h-8 w-8" /> </span>
             <span className="font-bold text-white text-sm">Reserva Natural</span>
           </div>
           <div className="w-10" /> {/* Spacer for centering */}

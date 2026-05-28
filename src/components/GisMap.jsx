@@ -541,7 +541,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
               <img src={selectedReport.foto_url} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-[#102216] text-white overflow-hidden">
-                <span className="text-4xl animate-pulse">🌲</span>
+                <span className="flex items-center"><img src="/Logo.svg" alt="EcoReport-GIS Logo" className="h-8 w-8" /> </span>
               </div>
             )}
             <button
