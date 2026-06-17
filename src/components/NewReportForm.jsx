@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import CustomSelect from './CustomSelect';
 import SuccessModal from './SuccessModal';
+import { API_BASE_URL } from '../config';
+import { compressImage } from '../utils/image';
 
 function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
     const [categories, setCategories] = useState([]);
@@ -18,7 +20,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
     const USER_ID = "d794da38-a394-4036-8495-cbaf3d594c97"; // Default for now
 
     useEffect(() => {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
+        const apiBase = API_BASE_URL;
 
         const fetchCategories = async () => {
             try {
@@ -77,7 +79,7 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
             foto_url: formData.foto_url || `https://placehold.co/600x400?text=${formData.titulo}`
         };
 
-        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
+        const apiBase = API_BASE_URL;
 
         try {
             const response = await fetch(`${apiBase}/reportes`, {
@@ -234,11 +236,13 @@ function NewReportForm({ lat, lng, onCancel, onSubmitSuccess }) {
                                                 const file = e.target.files[0];
                                                 if (!file) return;
 
-                                                const uploadData = new FormData();
-                                                uploadData.append('file', file);
-
                                                 try {
-                                                    const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
+                                                    // Compresor de imagen nativo
+                                                    const compressedFile = await compressImage(file);
+                                                    const uploadData = new FormData();
+                                                    uploadData.append('file', compressedFile);
+
+                                                    const apiBase = API_BASE_URL;
                                                     const response = await fetch(`${apiBase}/upload`, {
                                                         method: 'POST',
                                                         body: uploadData

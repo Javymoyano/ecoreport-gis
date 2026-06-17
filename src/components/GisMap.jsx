@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import LayerControl from './LayerControl';
+import { API_BASE_URL } from '../config';
 
 function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }) {
   const mapContainer = useRef(null);
@@ -34,7 +35,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
   }, []);
 
   const fetchReports = async () => {
-    const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
+    const apiBase = API_BASE_URL;
     try {
       const response = await fetch(`${apiBase}/reportes`);
       const data = await response.json();
@@ -45,7 +46,7 @@ function GisMap({ onStartReport, onStartInventory, targetCoords, onClearTarget }
   };
 
   const fetchBiologicRecords = async () => {
-    const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
+    const apiBase = API_BASE_URL;
     try {
       const response = await fetch(`${apiBase}/registros-biologicos`);
       const data = await response.json();

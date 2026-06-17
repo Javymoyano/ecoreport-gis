@@ -138,16 +138,59 @@ def create_registro(registro: RegistroBiologicoCreate):
 async def upload_file(request: Request, file: UploadFile = File(...)):
     try:
         file_extension = os.path.splitext(file.filename)[1]
+        # Fallback si no tiene extensión
+        if not file_extension:
+            content_type = file.content_type
+            if content_type == "image/png":
+                file_extension = ".png"
+            elif content_type == "image/gif":
+                file_extension = ".gif"
+            else:
+                file_extension = ".jpg"
+                
         new_filename = f"{uuid.uuid4()}{file_extension}"
-        file_path = os.path.join(UPLOAD_DIR, new_filename)
         
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        # Leemos el archivo en memoria para subirlo
+        file_content = await file.read()
+        
+        # Nombre del bucket público en Supabase
+        BUCKET_NAME = "fotos"
+        
+        try:
+            # Subir archivo a Supabase Storage
+            content_type = file.content_type or "image/jpeg"
+            supabase.storage.from_(BUCKET_NAME).upload(
+                path=new_filename,
+                file=file_content,
+                file_options={"content-type": content_type}
+            )
             
-        # Generar URL basada en el host del request
-        host = request.url.hostname
-        port = request.url.port
-        file_url = f"http://{host}:{port}/uploads/{new_filename}"
-        return {"url": file_url}
+            # Obtener la URL pública del archivo subido
+            file_url = supabase.storage.from_(BUCKET_NAME).get_public_url(new_filename)
+            print(f"[SUCCESS] Archivo subido a Supabase Storage bucket '{BUCKET_NAME}': {file_url}")
+            return {"url": file_url}
+            
+        except Exception as storage_err:
+            print(f"[WARNING] Fallo al subir a Supabase Storage: {str(storage_err)}")
+            print("Ejecutando fallback: guardando archivo localmente en servidor.")
+            
+            # Guardamos localmente si el bucket no existe o falla
+            file_path = os.path.join(UPLOAD_DIR, new_filename)
+            with open(file_path, "wb") as buffer:
+                buffer.write(file_content)
+                
+            # Obtener el protocolo y host reales considerando proxies (Render, Ngrok, etc.)
+            proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+            host = request.headers.get("x-forwarded-host", request.url.netloc)
+            if not host:
+                host = request.headers.get("host", request.url.netloc)
+                
+            file_url = f"{proto}://{host}/uploads/{new_filename}"
+            return {
+                "url": file_url,
+                "warning": f"Guardado localmente. Asegúrate de crear un bucket público llamado '{BUCKET_NAME}' en Supabase Storage. Error: {str(storage_err)}"
+            }
+            
     except Exception as e:
+        print(f"[ERROR] upload_file: {str(e)}")
         return {"error": str(e)}, 500

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import CustomSelect from './CustomSelect';
+import { API_BASE_URL } from '../config';
 
 function ReportDetail({ report, onBack }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -26,7 +27,7 @@ function ReportDetail({ report, onBack }) {
     }, [report, isEditing]);
 
     useEffect(() => {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
+        const apiBase = API_BASE_URL;
 
         const fetchCategories = async () => {
             try {
@@ -65,7 +66,7 @@ function ReportDetail({ report, onBack }) {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8001`;
+            const apiBase = API_BASE_URL;
             const payload = {
                 titulo: formData.titulo,
                 description: formData.description,
